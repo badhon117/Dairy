@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
 <title>Diary</title>
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#e0568a">
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
 <!-- স্প্লাশ স্ক্রিন -->
 <div class="splash hidden" id="splash">
-  <div class="splash-logo">🌸</div>
+  <div class="splash-logo">📖</div>
   <h1 class="splash-title" id="splashTitle">আমার দিনলিপি</h1>
   <p class="splash-sub" id="splashSub">প্রতিদিনের ছোট ছোট গল্প</p>
   <div class="splash-loader"><span></span></div>
@@ -24,6 +24,11 @@
   <header class="home-header">
     <div class="greeting" id="greeting">শুভ সকাল 🌷</div>
     <h2 class="home-title">আজ কী করতে চাও?</h2>
+    
+    <!-- ✅ ইনস্টল বাটন -->
+    <button id="pwaInstallBtn" style="display:none; margin-top:10px; padding:8px 16px; border-radius:20px; background:var(--pink-main); color:#fff; border:none; font-family:inherit; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(224,86,138,0.3);">
+      ⬇️ অ্যাপ ইনস্টল করুন
+    </button>
   </header>
   
   <!-- ড্যাশবোর্ড সামারি -->
@@ -149,6 +154,45 @@
 <script src="player-widget.js"></script>
 <script src="theme.js"></script>
 <script>
+  // ============================================================
+  // PWA Install Prompt Logic
+  // ============================================================
+  let deferredPrompt;
+  const installBtn = document.getElementById('pwaInstallBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // ব্রাউজার নিজে থেকে ইনস্টল প্রম্পট দেখানো বন্ধ করে রাখি
+    e.preventDefault();
+    // প্রম্পটটি সেভ করে রাখি
+    deferredPrompt = e;
+    // আমাদের কাস্টম ইনস্টল বাটনটি দেখাই
+    if (installBtn) installBtn.style.display = 'inline-block';
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        alert('আপনার ব্রাউজার হয়তো ইতিমধ্যে অ্যাপটি ইনস্টল করে ফেলেছে, অথবা এটি ইনস্টলেশন সাপোর্ট করছে না। (ব্রাউজার মেনু থেকে "Add to Home Screen" চেষ্টা করুন)');
+        return;
+      }
+      // ব্রাউজারের ইনস্টল প্রম্পট দেখাই
+      deferredPrompt.prompt();
+      // ইউজার কী রেসপন্স দিলো তা চেক করি
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to the install prompt: ${outcome}`);
+      // প্রম্পট একবারই ব্যবহার করা যায়, তাই মুছে ফেলি
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    if (installBtn) installBtn.style.display = 'none';
+    deferredPrompt = null;
+    console.log('PWA was installed');
+  });
+
+  // Service Worker Register
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
