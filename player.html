@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Player</title>
+<style>
+  body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
+  audio { display: none; }
+</style>
+</head>
+<body>
+
+<audio id="globalAudio" preload="auto" crossorigin="anonymous"></audio>
+
+<script>
+(function() {
+  'use strict';
+
+  const audio = document.getElementById('globalAudio');
+  const STORAGE_KEY = 'musicPlayerState';
+
+  // ============================================================
+  // স্টেট লোড/সেভ
+  // ============================================================
+  function loadState() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (raw && typeof raw === 'object') {
+        return {
+          playlist: Array.isArray(raw.playlist) ? raw.playlist : [],
+          currentIndex: typeof raw.currentIndex === 'number' ? raw.currentIndex : -1,
+          currentTime: typeof raw.currentTime === 'number' ? raw.currentTime : 0,
+          isPlaying: !!raw.isPlaying,
+          volume: typeof raw.volume === 'number' ? raw.volume : 1,
+          shuffle: !!raw.shuffle,
+          repeat: ['off', 'one', 'all'].includes(raw.repeat) ? raw.repeat : 'off',
+          playbackRate: typeof raw.playbackRate === 'number' ? raw.playbackRate : 1
+        };
+      }
+    } catch (e) {}
+    return {
+      playlist: [], currentIndex: -1, currentTime: 0,
+      isPlaying: false, volume: 1, shuffle: false, repeat: 'off', playbackRate: 1
+    };
+  }
+
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  let state = loadState();
+
+  // ============================================================
+  // IndexedDB
+  // ============================================================
+  const DB_NAME = 'pinkDiaryMusicDB';
+  const DB_VERSION = 1;
+  const STORE = 'songs';
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(STORE)) {
+          database.createObjectStore(STORE, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = (e) => resolve(e.target.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function getSongBlob(id) {
+    const database = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(id);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // ============================================================
+  // গান লোড
+  // ============================================================
+  let currentAudioUrl = null;
+  let isLoadingSong = false;
+
+  async function loadCurrentSong() {
+    if (state.currentIndex < 0 || state.currentIndex >= state.playlist.length) {
+      audio.pause();
+      audio.removeAttribute('src');
+      try { audio.load(); } catch (e) {}
+      if (currentAudioUrl) {
+        try { URL.revokeObjectURL(currentAudioUrl); } catch (e) {}
+        currentAudioUrl = null;
+      }
+      broadcastUpdate();
+      updateMediaSession();
+      return;
+    }
+
+    const songId = state.playlist[state.currentIndex].id;
+    if (!songId) { broadcastUpdate(); return; }
+    if (isLoadingSong) return;
+
+    isLoadingSong = true;
+
+    try {
+      const song = await getSongBlob(songId);
+      if (!song || !song.fileData) {
+        isLoadingSong = false;
+        console.warn('Song file not found:', songId);
+        broadcastUpdate();
+        return;
+      }
+
+      if (currentAudioUrl) {
+        try { URL.revokeObjectURL(currentAudioUrl); } catch (e) {}
+      }
+      currentAudioUrl = URL.createObjectURL(song.fileData);
+
+      const onMeta = () => {
+        audio.removeEventListener('loadedmetadata', onMeta);
+
+        // playback rate
+        try { audio.playbackRate = state.playbackRate || 1; } catch (e) {}
+        audio.volume = state.volume;
+
+        if (state.currentTime > 0) {
+          try {
+            audio.currentTime = Math.min(state.currentTime, audio.duration || state.currentTime);
+          } catch (e) {}
+        }
+
+        if (state.isPlaying) {
+          audio.play().catch(err => {
+            console.log('Autoplay blocked:', err.message);
+            broadcastUpdate();
+          });
+        } else {
+          broadcastUpdate();
+        }
+        updateMediaSession();
+      };
+      audio.addEventListener('loadedmetadata', onMeta);
+
+      audio.src = currentAudioUrl;
+
+    } catch (e) {
+      console.error('Song load error:', e);
+    }
+    isLoadingSong = false;
+  }
+
+  // ============================================================
+  // ব্রডকাস্ট
+  // ============================================================
+  function broadcastUpdate() {
+    const song = state.playlist[state.currentIndex];
+    const data = {
+      type: 'musicStateUpdate',
+      currentIndex: state.currentIndex,
+      currentSongId: song?.id || null,
+      currentSongName: song?.name || null,
+      currentTime: audio.currentTime || 0,
+      duration: audio.duration || 0,
+      isPlaying: !audio.paused && !audio.ended && audio.readyState > 2,
+      stateIsPlaying: state.isPlaying,
+      shuffle: state.shuffle,
+      repeat: state.repeat,
+      volume: state.volume,
+      playbackRate: state.playbackRate
+    };
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(data, '*');
+      }
+    } catch (e) {}
+  }
+
+  // ============================================================
+  // MediaSession (লক স্ক্রিন কন্ট্রোল)
+  // ============================================================
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+
+    const song = state.playlist[state.currentIndex];
+    if (!song) {
+      try { navigator.mediaSession.metadata = null; } catch (e) {}
+      return;
+    }
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.name || 'Unknown',
+        artist: 'Diary Music',
+        album: 'My Music',
+        artwork: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => {
+        state.isPlaying = true;
+        saveState();
+        audio.play().catch(()=>{});
+        broadcastUpdate();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        state.isPlaying = false;
+        saveState();
+        audio.pause();
+        broadcastUpdate();
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => nextSong());
+      navigator.mediaSession.setActionHandler('previoustrack', () => prevSong());
+      try {
+        navigator.mediaSession.setActionHandler('seekto', (d) => {
+          if (d.seekTime != null) {
+            audio.currentTime = d.seekTime;
+            state.currentTime = d.seekTime;
+            saveState();
+            broadcastUpdate();
+          }
+        });
+      } catch (e) {}
+    } catch (e) {}
+  }
+
+  // ============================================================
+  // অডিও ইভেন্ট
+  // ============================================================
+  audio.addEventListener('timeupdate', () => {
+    state.currentTime = audio.currentTime;
+    saveState();
+    broadcastUpdate();
+  });
+
+  audio.addEventListener('play', () => {
+    state.isPlaying = true;
+    saveState();
+    broadcastUpdate();
+    if ('mediaSession' in navigator) {
+      try { navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
+    }
+  });
+
+  audio.addEventListener('pause', () => {
+    broadcastUpdate();
+    if ('mediaSession' in navigator) {
+      try { navigator.mediaSession.playbackState = 'paused'; } catch (e) {}
+    }
+  });
+
+  audio.addEventListener('ended', () => {
+    if (state.repeat === 'one') {
+      audio.currentTime = 0;
+      audio.play().catch(()=>{});
+      return;
+    }
+    if (state.shuffle && state.playlist.length > 1) {
+      let nextIdx;
+      do { nextIdx = Math.floor(Math.random() * state.playlist.length); }
+      while (nextIdx === state.currentIndex);
+      state.currentIndex = nextIdx;
+    } else {
+      if (state.currentIndex < state.playlist.length - 1) {
+        state.currentIndex++;
+      } else if (state.repeat === 'all') {
+        state.currentIndex = 0;
+      } else {
+        state.isPlaying = false;
+        saveState();
+        broadcastUpdate();
+        return;
+      }
+    }
+    state.currentTime = 0;
+    state.isPlaying = true;
+    saveState();
+    loadCurrentSong();
+  });
+
+  audio.addEventListener('error', (e) => {
+    console.error('Audio error:', e);
+    broadcastUpdate();
+  });
+
+  // ============================================================
+  // 🔀 Next / Prev — স্বাভাবিক লজিক
+  // ============================================================
+  async function nextSong() {
+    if (state.playlist.length === 0) return;
+
+    if (state.shuffle && state.playlist.length > 1) {
+      let nextIdx;
+      do { nextIdx = Math.floor(Math.random() * state.playlist.length); }
+      while (nextIdx === state.currentIndex);
+      state.currentIndex = nextIdx;
+    } else {
+      // Next = পরের গান (index +1, শেষ হলে wrap)
+      if (state.currentIndex < state.playlist.length - 1) {
+        state.currentIndex++;
+      } else {
+        state.currentIndex = 0;
+      }
+    }
+
+    state.currentTime = 0;
+    state.isPlaying = true;
+    saveState();
+    await loadCurrentSong();
+    broadcastUpdate();
+  }
+
+  async function prevSong() {
+    if (state.playlist.length === 0) return;
+
+    if (state.shuffle && state.playlist.length > 1) {
+      let prevIdx;
+      do { prevIdx = Math.floor(Math.random() * state.playlist.length); }
+      while (prevIdx === state.currentIndex);
+      state.currentIndex = prevIdx;
+    } else {
+      // Prev = আগের গান (index -1, শুরুর হলে wrap)
+      if (state.currentIndex > 0) {
+        state.currentIndex--;
+      } else {
+        state.currentIndex = state.playlist.length - 1;
+      }
+    }
+
+    state.currentTime = 0;
+    state.isPlaying = true;
+    saveState();
+    await loadCurrentSong();
+    broadcastUpdate();
+  }
+
+  // ============================================================
+  // কমান্ড হ্যান্ডলার
+  // ============================================================
+  window.addEventListener('message', async (e) => {
+    const data = e.data;
+    if (!data || !data.type) return;
+
+    if (data.type === 'musicPlay') {
+      if (data.playlist) state.playlist = data.playlist;
+      if (typeof data.currentIndex === 'number') {
+        if (data.currentIndex !== state.currentIndex) {
+          state.currentIndex = data.currentIndex;
+          state.currentTime = 0;
+          saveState();
+          await loadCurrentSong();
+        }
+      }
+      state.isPlaying = true;
+      saveState();
+      if (audio.src) audio.play().catch(()=>{});
+      else if (state.currentIndex >= 0) await loadCurrentSong();
+      broadcastUpdate();
+    }
+    else if (data.type === 'musicPause') {
+      state.isPlaying = false;
+      saveState();
+      audio.pause();
+      broadcastUpdate();
+    }
+    else if (data.type === 'musicToggle') {
+      if (audio.paused) {
+        state.isPlaying = true;
+        saveState();
+        audio.play().catch(err => {
+          console.log('Play failed:', err);
+          broadcastUpdate();
+        });
+      } else {
+        state.isPlaying = false;
+        saveState();
+        audio.pause();
+      }
+      broadcastUpdate();
+    }
+    else if (data.type === 'musicNext') await nextSong();
+    else if (data.type === 'musicPrev') await prevSong();
+    else if (data.type === 'musicSeek') {
+      if (typeof data.time === 'number') {
+        audio.currentTime = data.time;
+        state.currentTime = data.time;
+        saveState();
+        broadcastUpdate();
+      }
+    }
+    else if (data.type === 'musicVolume') {
+      if (typeof data.volume === 'number') {
+        audio.volume = data.volume;
+        state.volume = data.volume;
+        saveState();
+        broadcastUpdate();
+      }
+    }
+    else if (data.type === 'musicSpeed') {
+      if (typeof data.speed === 'number') {
+        try {
+          audio.playbackRate = data.speed;
+          state.playbackRate = data.speed;
+          saveState();
+        } catch (e) {}
+      }
+    }
+    else if (data.type === 'musicSetPlaylist') {
+      if (data.playlist) { state.playlist = data.playlist; saveState(); }
+    }
+    else if (data.type === 'musicGetState') {
+      broadcastUpdate();
+    }
+    else if (data.type === 'musicResumeIfPlaying') {
+      if (state.isPlaying && audio.paused && audio.src) {
+        audio.play().catch(()=>{});
+      }
+    }
+  });
+
+  function tryResumeOnInteraction() {
+    if (state.isPlaying && audio.paused && audio.src) {
+      audio.play().catch(()=>{});
+    }
+  }
+  document.addEventListener('click', tryResumeOnInteraction);
+  document.addEventListener('touchstart', tryResumeOnInteraction, { passive: true });
+
+  // ============================================================
+  // visibilitychange → state সেভ
+  // ============================================================
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveState();
+    }
+  });
+
+  // ============================================================
+  // ইনিশিয়ালাইজ
+  // ============================================================
+  (async function init() {
+    if (state.currentIndex >= 0 && state.playlist.length > 0) {
+      await loadCurrentSong();
+    }
+    broadcastUpdate();
+    updateMediaSession();
+  })();
+
+})();
+</script>
+
+</body>
+</html>

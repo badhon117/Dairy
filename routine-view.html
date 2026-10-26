@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>রুটিন দেখুন 🗓️</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  .view-header-actions {
+    display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .hdr-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 14px; border-radius: 12px; font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--pink-mid);
+    background: var(--pink-light); color: var(--pink-main);
+    transition: 0.15s;
+  }
+  .hdr-btn:active { transform: scale(0.96); }
+  .hdr-btn.primary {
+    background: var(--pink-main); color: #fff;
+    border-color: var(--pink-main);
+  }
+
+  .routine-meta {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    font-size: 12px; color: var(--pink-dark);
+    margin-bottom: 14px; padding: 0 4px;
+  }
+  .routine-meta span {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--pink-light); padding: 5px 10px;
+    border-radius: 20px; color: var(--pink-main); font-weight: 600;
+  }
+
+  /* Table */
+  .table-wrap {
+    width: 100%; overflow-x: auto; border-radius: 16px;
+    box-shadow: 0 4px 18px var(--card-shadow);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg); margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .routine-table {
+    width: 100%; border-collapse: collapse; table-layout: fixed;
+    font-size: 12.5px; min-width: 100%;
+  }
+  .routine-table thead th {
+    background: linear-gradient(135deg, var(--pink-main), var(--pink-dark));
+    color: #fff; font-weight: 700; font-size: 11.5px;
+    padding: 12px 6px; text-align: center; line-height: 1.35;
+    border-right: 1px solid rgba(255,255,255,0.25);
+    word-break: break-word;
+  }
+  .routine-table thead th:first-child { border-top-left-radius: 16px; }
+  .routine-table thead th:last-child { border-top-right-radius: 16px; border-right: none; }
+
+  .routine-table tbody td {
+    padding: 10px 6px; text-align: center; font-size: 12px;
+    color: var(--text); border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color); word-break: break-word;
+    line-height: 1.35; transition: background 0.15s;
+  }
+  .routine-table tbody tr:last-child td { border-bottom: none; }
+
+  .day-cell {
+    background: var(--pink-light); font-weight: 700; font-size: 11.5px;
+    color: var(--pink-main);
+    position: sticky; left: 0; z-index: 2;
+    min-width: 70px; width: 70px;
+    box-shadow: 2px 0 0 var(--border-color);
+  }
+  .day-cell .day-icon { display: block; font-size: 14px; margin-bottom: 2px; }
+
+  .routine-table tbody tr:hover td:not(.day-cell) { background: var(--pink-light); }
+  .routine-table tbody td.filled { font-weight: 600; }
+  .routine-table tbody td.empty-cell { color: var(--pink-mid); font-weight: 400; }
+
+  .routine-table tr.today-row .day-cell {
+    background: var(--pink-main); color: #fff;
+    border-radius: 0 10px 10px 0;
+  }
+  .routine-table tr.today-row td:not(.day-cell) { background: var(--pink-soft); }
+
+  /* Row colors */
+  .row-color-0 td { background-color: #fff5f9 !important; color: #5a3a47 !important; }
+  .row-color-1 td { background-color: #f0f8ff !important; color: #2c3e50 !important; }
+  .row-color-2 td { background-color: #f0fdf4 !important; color: #1e5631 !important; }
+  .row-color-3 td { background-color: #fefce8 !important; color: #7a6415 !important; }
+  .row-color-4 td { background-color: #f5f3ff !important; color: #4a3b6b !important; }
+  .row-color-5 td { background-color: #fff7ed !important; color: #8a4b1c !important; }
+  .row-color-6 td { background-color: #ecfeff !important; color: #1a5b66 !important; }
+
+  .empty-view {
+    text-align: center; padding: 60px 20px; color: var(--pink-dark);
+  }
+  .empty-view .big { font-size: 56px; display: block; margin-bottom: 12px; }
+
+  /* pdf modal */
+  .pdf-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; padding: 20px; backdrop-filter: blur(4px);
+  }
+  .pdf-modal-overlay.hidden { display: none !important; }
+  .pdf-modal-card {
+    background: var(--card-bg); border-radius: 20px; padding: 24px;
+    width: 100%; max-width: 340px; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    color: var(--text);
+  }
+  .pdf-modal-card h3 {
+    font-size: 18px; color: var(--pink-main); margin-bottom: 8px;
+  }
+  .pdf-modal-card p {
+    font-size: 13px; color: var(--pink-dark); margin-bottom: 20px;
+  }
+  .pdf-option-btn {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 14px; margin-bottom: 10px;
+    border-radius: 12px; border: 1px solid var(--border-color);
+    background: var(--pink-light); cursor: pointer; transition: 0.15s;
+    font-family: inherit; text-align: left;
+    color: var(--text);
+  }
+  .pdf-option-btn:active { transform: scale(0.97); }
+  .pdf-option-btn:hover { border-color: var(--pink-main); }
+  .pdf-opt-icon { font-size: 24px; }
+  .pdf-opt-text { font-size: 14px; font-weight: 600; }
+  .pdf-opt-desc { font-size: 11px; color: var(--pink-dark); font-weight: 400; margin-top: 2px; }
+
+  #captureArea {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 20px;
+  }
+  #captureArea .capture-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--pink-main);
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='routine.html'">←</button>
+    <div>
+      <h1 id="viewTitle">রুটিন</h1>
+    </div>
+  </div>
+
+  <div class="view-header-actions no-print" id="actionButtons"></div>
+
+  <div class="routine-meta" id="routineMeta"></div>
+
+  <div id="captureArea">
+    <div class="capture-title" id="captureTitle"></div>
+    <div id="tableView"></div>
+  </div>
+
+</div>
+
+<!-- PDF/Print choice modal -->
+<div class="pdf-modal-overlay hidden" id="pdfModal">
+  <div class="pdf-modal-card">
+    <h3 id="pdfTitle">প্রিন্ট / PDF</h3>
+    <p id="pdfSub">কীভাবে সেভ করতে চান?</p>
+    <button class="pdf-option-btn" id="printColorBtn" type="button">
+      <div class="pdf-opt-icon">🎨</div>
+      <div>
+        <div class="pdf-opt-text" id="printColorText">রঙিন প্রিন্ট</div>
+        <div class="pdf-opt-desc" id="printColorDesc">কালার প্রিন্টার / PDF</div>
+      </div>
+    </button>
+    <button class="pdf-option-btn" id="printBwBtn" type="button">
+      <div class="pdf-opt-icon">🖤</div>
+      <div>
+        <div class="pdf-opt-text" id="printBwText">সাদাকালো প্রিন্ট</div>
+        <div class="pdf-opt-desc" id="printBwDesc">সাদা-কালো আউটপুট</div>
+      </div>
+    </button>
+    <button class="settings-btn-outline" id="pdfCancelBtn" type="button" style="margin-top:6px;">বাতিল</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // Days
+  // ============================================================
+  const DAYS = [
+    { key: 'sun', icon: '☀️', bn: 'রবিবার', en: 'Sunday' },
+    { key: 'mon', icon: '📖', bn: 'সোমবার', en: 'Monday' },
+    { key: 'tue', icon: '✏️', bn: 'মঙ্গলবার', en: 'Tuesday' },
+    { key: 'wed', icon: '🎓', bn: 'বুধবার', en: 'Wednesday' },
+    { key: 'thu', icon: '📜', bn: 'বৃহস্পতিবার', en: 'Thursday' },
+    { key: 'fri', icon: '🌸', bn: 'শুক্রবার', en: 'Friday' },
+    { key: 'sat', icon: '☕', bn: 'শনিবার', en: 'Saturday' }
+  ];
+
+  const todayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
+
+  // ============================================================
+  // Load routine
+  // ============================================================
+  let routine = null;
+  try {
+    const raw = localStorage.getItem('activeRoutine');
+    routine = raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    routine = null;
+  }
+
+  // ============================================================
+  // Buttons
+  // ============================================================
+  function renderButtons() {
+    const isEnNow = isEn();
+    const container = document.getElementById('actionButtons');
+    if (!container) return;
+
+    container.innerHTML = `
+      <button class="hdr-btn primary" id="editBtn" type="button">✏️ ${isEnNow ? 'Edit' : 'এডিট করুন'}</button>
+      <button class="hdr-btn" id="pdfBtn" type="button">📄 ${isEnNow ? 'PDF Download' : 'PDF ডাউনলোড'}</button>
+      <button class="hdr-btn" id="csvBtn" type="button">📊 ${isEnNow ? 'CSV Download' : 'CSV ডাউনলোড'}</button>
+      <button class="hdr-btn" id="imgBtn" type="button">🖼️ ${isEnNow ? 'Image Download' : 'ছবি ডাউনলোড'}</button>
+    `;
+
+    document.getElementById('editBtn').addEventListener('click', () => {
+      if (!routine) return;
+      try {
+        localStorage.setItem('editRoutineId', String(routine.id));
+      } catch (e) {
+        console.error(e);
+      }
+      location.href = 'routine.html';
+    });
+
+    document.getElementById('pdfBtn').addEventListener('click', openPdfModal);
+    document.getElementById('csvBtn').addEventListener('click', downloadCsv);
+    document.getElementById('imgBtn').addEventListener('click', downloadImage);
+  }
+
+  // ============================================================
+  // Render view
+  // ============================================================
+  function renderView() {
+    const isEnNow = isEn();
+    const titleEl = document.getElementById('viewTitle');
+    const metaEl = document.getElementById('routineMeta');
+    const tableView = document.getElementById('tableView');
+    const captureTitle = document.getElementById('captureTitle');
+    if (!tableView) return;
+
+    // Empty state
+    if (!routine || !Array.isArray(routine.slots) || !Array.isArray(routine.days) || routine.slots.length === 0) {
+      if (titleEl) titleEl.textContent = isEnNow ? 'Routine' : 'রুটিন';
+      if (captureTitle) captureTitle.textContent = '';
+      if (metaEl) metaEl.innerHTML = '';
+      tableView.innerHTML = `<div class="empty-view"><span class="big">📅</span>${isEnNow ? 'Open a routine from the list.' : 'তালিকা থেকে একটি রুটিন খুলুন।'}</div>`;
+      return;
+    }
+
+    const routineName = routine.name || (isEnNow ? 'Routine' : 'রুটিন');
+    if (titleEl) titleEl.textContent = routineName;
+    if (captureTitle) captureTitle.textContent = routineName;
+
+    // Meta
+    if (metaEl) {
+      metaEl.innerHTML = `
+        <span>📊 ${routine.slots.length} ${isEnNow ? 'columns' : 'কলাম'}</span>
+        <span>📅 ${routine.days.length} ${isEnNow ? 'days' : 'দিন'}</span>
+        ${routine.days.includes(todayKey) ? `<span>⭐ ${isEnNow ? 'Today included' : 'আজকের দিন আছে'}</span>` : ''}
+      `;
+    }
+
+    // Header row
+    let headHtml = '<tr><th style="width:62px;">' + (isEnNow ? 'Day' : 'দিন') + '</th>';
+    routine.slots.forEach(slot => {
+      headHtml += `<th>${escapeHtml(slot.time || '')}</th>`;
+    });
+    headHtml += '</tr>';
+
+    // Body
+    const orderedDays = DAYS.filter(d => routine.days.includes(d.key));
+    let bodyHtml = '';
+    const grid = (routine.grid && typeof routine.grid === 'object') ? routine.grid : {};
+
+    orderedDays.forEach((dayObj, index) => {
+      const isToday = dayObj.key === todayKey;
+      const colorClass = `row-color-${index % 7}`;
+      const rowClasses = `${isToday ? 'today-row' : ''} ${colorClass}`;
+
+      bodyHtml += `<tr class="${rowClasses}">`;
+      bodyHtml += `<td class="day-cell"><span class="day-icon">${dayObj.icon}</span>${isEnNow ? dayObj.en : dayObj.bn}</td>`;
+      routine.slots.forEach((slot, colIndex) => {
+        const cellKey = `${dayObj.key}_${colIndex}`;
+        const val = grid[cellKey] ? String(grid[cellKey]).trim() : '';
+        if (val) {
+          bodyHtml += `<td class="filled">${escapeHtml(val)}</td>`;
+        } else {
+          bodyHtml += `<td class="empty-cell">—</td>`;
+        }
+      });
+      bodyHtml += '</tr>';
+    });
+
+    tableView.innerHTML = `
+      <div class="table-wrap">
+        <table class="routine-table">
+          <thead>${headHtml}</thead>
+          <tbody>${bodyHtml}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ============================================================
+  // PDF / Print
+  // ============================================================
+  function openPdfModal() {
+    if (!routine) return;
+    const modal = document.getElementById('pdfModal');
+    if (!modal) return;
+
+    // ভাষা আপডেট
+    const isEnNow = isEn();
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+    setText('pdfTitle', isEnNow ? 'Print / PDF' : 'প্রিন্ট / PDF');
+    setText('pdfSub', isEnNow ? 'How do you want to save?' : 'কীভাবে সেভ করতে চান?');
+    setText('printColorText', isEnNow ? 'Color Print' : 'রঙিন প্রিন্ট');
+    setText('printColorDesc', isEnNow ? 'Color printer / PDF' : 'কালার প্রিন্টার / PDF');
+    setText('printBwText', isEnNow ? 'Black & White' : 'সাদাকালো প্রিন্ট');
+    setText('printBwDesc', isEnNow ? 'Monochrome output' : 'সাদা-কালো আউটপুট');
+    setText('pdfCancelBtn', isEnNow ? 'Cancel' : 'বাতিল');
+
+    modal.classList.remove('hidden');
+  }
+
+  function closePdfModal() {
+    const modal = document.getElementById('pdfModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  // ✅ রঙিন প্রিন্ট (browser print)
+  function printColor() {
+    closePdfModal();
+    document.body.classList.remove('print-bw');
+    setTimeout(() => window.print(), 100);
+  }
+
+  // ✅ সাদাকালো প্রিন্ট
+  function printBw() {
+    closePdfModal();
+    document.body.classList.add('print-bw');
+    setTimeout(() => {
+      window.print();
+      // print শেষে reset (some browsers-এ synchronous না)
+      setTimeout(() => document.body.classList.remove('print-bw'), 500);
+    }, 100);
+  }
+
+  // ============================================================
+  // CSV
+  // ============================================================
+  function downloadCsv() {
+    if (!routine) return;
+    const isEnNow = isEn();
+
+    let csvContent = '';
+    csvContent += `"${(routine.name || 'Routine').replace(/"/g, '""')}"\n\n`;
+
+    // Header
+    const headerCols = [isEnNow ? 'Day' : 'দিন', ...routine.slots.map(s => s.time || '')];
+    csvContent += headerCols.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',') + '\n';
+
+    // Body
+    const grid = (routine.grid && typeof routine.grid === 'object') ? routine.grid : {};
+    DAYS.filter(d => routine.days.includes(d.key)).forEach(dayObj => {
+      const rowData = [isEnNow ? dayObj.en : dayObj.bn];
+      routine.slots.forEach((slot, i) => {
+        const cellVal = grid[`${dayObj.key}_${i}`] || '-';
+        rowData.push(cellVal);
+      });
+      csvContent += rowData.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',') + '\n';
+    });
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (routine.name || 'routine') + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ============================================================
+  // Image download
+  // ============================================================
+  function downloadImage() {
+    if (!routine) return;
+    const isEnNow = isEn();
+    const captureArea = document.getElementById('captureArea');
+    if (!captureArea) return;
+
+    if (typeof html2canvas === 'undefined') {
+      alert(isEnNow ? 'Image library not loaded. Please check your connection.' : 'ছবি লাইব্রেরি লোড হয়নি। ইন্টারনেট চেক করুন।');
+      return;
+    }
+
+    // Today highlight সাময়িক সরাও
+    const todayRow = captureArea.querySelector('.today-row');
+    let originalClass = '';
+    if (todayRow) {
+      originalClass = todayRow.className;
+      todayRow.classList.remove('today-row');
+    }
+
+    // Styling
+    captureArea.style.padding = '40px';
+    captureArea.style.transform = 'scale(0.9)';
+    captureArea.style.transformOrigin = 'top left';
+
+    html2canvas(captureArea, {
+      scale: 1.5,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = imgData;
+      a.download = (routine.name || 'routine') + '.png';
+      a.click();
+
+      // Reset
+      if (todayRow) todayRow.className = originalClass;
+      captureArea.style.padding = '20px';
+      captureArea.style.transform = 'none';
+    }).catch(err => {
+      console.error('Image download failed:', err);
+      alert(isEnNow ? 'Failed to download image ❌' : 'ছবি ডাউনলোড করা যায়নি ❌');
+      if (todayRow) todayRow.className = originalClass;
+      captureArea.style.padding = '20px';
+      captureArea.style.transform = 'none';
+    });
+  }
+
+  // ============================================================
+  // PDF Modal bindings
+  // ============================================================
+  const printColorBtn = document.getElementById('printColorBtn');
+  if (printColorBtn) printColorBtn.addEventListener('click', printColor);
+
+  const printBwBtn = document.getElementById('printBwBtn');
+  if (printBwBtn) printBwBtn.addEventListener('click', printBw);
+
+  const pdfCancelBtn = document.getElementById('pdfCancelBtn');
+  if (pdfCancelBtn) pdfCancelBtn.addEventListener('click', closePdfModal);
+
+  const pdfModal = document.getElementById('pdfModal');
+  if (pdfModal) {
+    pdfModal.addEventListener('click', (e) => {
+      if (e.target === pdfModal) closePdfModal();
+    });
+  }
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      // routine আবার লোড (edit হলে আপডেট)
+      try {
+        const raw = localStorage.getItem('activeRoutine');
+        routine = raw ? JSON.parse(raw) : null;
+      } catch (err) {}
+      renderButtons();
+      renderView();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  renderButtons();
+  renderView();
+
+})();
+</script>
+
+<!-- Print CSS (body-তে inject করা, page-specific) -->
+<style>
+  @media print {
+    @page { size: A4 landscape; margin: 15mm; }
+
+    .view-header-actions,
+    .routine-meta,
+    .page-header,
+    .no-print,
+    .pdf-modal-overlay,
+    #globalMusicWidget,
+    #globalMusicPopup { display: none !important; }
+
+    body {
+      background: #fff !important;
+      margin: 0;
+      padding: 0;
+    }
+    .app {
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    #captureArea .capture-title {
+      display: block !important;
+      font-size: 24px !important;
+      font-weight: bold !important;
+      color: #000 !important;
+      margin-bottom: 15px !important;
+      text-align: center;
+    }
+
+    .table-wrap {
+      box-shadow: none !important;
+      border: 2px solid #333 !important;
+      width: 100% !important;
+      border-radius: 0 !important;
+      background: #fff !important;
+    }
+    .routine-table {
+      min-width: 100% !important;
+      font-size: 14px !important;
+    }
+
+    .routine-table thead th {
+      background: transparent !important;
+      color: #000 !important;
+      border: 1px solid #333 !important;
+      padding: 15px 8px !important;
+      font-size: 16px !important;
+      font-weight: bold !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .routine-table tbody td {
+      border: 1px solid #333 !important;
+      padding: 12px 8px !important;
+      color: #000 !important;
+    }
+    .day-cell {
+      background: transparent !important;
+      color: #000 !important;
+      font-weight: bold !important;
+    }
+    .routine-table tbody tr td {
+      background: #fff !important;
+    }
+
+    /* সাদাকালো প্রিন্ট মোড */
+    body.print-bw .routine-table thead th,
+    body.print-bw .routine-table tbody td,
+    body.print-bw .day-cell {
+      background: #fff !important;
+      color: #000 !important;
+    }
+  }
+</style>
+
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

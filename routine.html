@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>আমার রুটিন 🗓️</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; }
+
+  .routine-card {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card-bg); padding: 16px 20px; border-radius: 18px;
+    margin-bottom: 12px; box-shadow: 0 4px 14px var(--card-shadow);
+    cursor: pointer; transition: 0.15s; position: relative;
+    border: 1px solid var(--border-color);
+  }
+  .routine-card:active { transform: scale(0.98); }
+  .routine-info { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+  .routine-icon-box {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--pink-soft); display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .routine-name {
+    font-size: 16px; font-weight: 600; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .routine-details {
+    font-size: 12px; color: var(--pink-dark); margin-top: 4px; line-height: 1.5;
+  }
+
+  .card-actions { position: relative; flex-shrink: 0; }
+  .action-btn {
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    opacity: 0.6; padding: 5px; color: var(--text);
+  }
+  .action-btn:hover { opacity: 1; }
+
+  .dropdown-menu {
+    position: absolute; right: 0; top: 100%; background: var(--card-bg);
+    border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    min-width: 120px; z-index: 100; display: none; overflow: hidden;
+    border: 1px solid var(--border-color); text-align: left;
+  }
+  .dropdown-menu.show { display: block; }
+  .dropdown-item {
+    display: block; width: 100%; text-align: left; padding: 12px 16px;
+    background: none; border: none; font-family: inherit; font-size: 14px;
+    color: var(--text); cursor: pointer; border-bottom: 1px solid var(--pink-light);
+  }
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item:active { background: var(--pink-light); }
+  .dropdown-item.del { color: #d63a5f; }
+
+  .add-routine-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 16px; border-radius: 18px;
+    background: var(--pink-light); border: 2px dashed var(--pink-mid);
+    color: var(--pink-main); font-size: 16px; font-weight: 600;
+    font-family: inherit; cursor: pointer; margin-bottom: 24px;
+    transition: 0.2s;
+  }
+  .add-routine-btn:active { transform: scale(0.98); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; z-index: 100; backdrop-filter: blur(4px);
+  }
+  .hidden { display: none !important; }
+
+  .modal-box {
+    background: var(--card-bg); width: 100%; max-width: 440px;
+    max-height: 90vh; overflow-y: auto;
+    border-radius: 24px; padding: 24px; animation: pop 0.2s ease;
+    color: var(--text);
+  }
+  @keyframes pop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .modal-box h2 {
+    font-size: 20px; color: var(--pink-main); margin-bottom: 16px; font-weight: 700;
+  }
+  .modal-box label {
+    font-size: 13px; color: var(--pink-dark); margin-bottom: 6px;
+    display: block; font-weight: 600; margin-top: 14px;
+  }
+
+  .day-options-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;
+  }
+  .day-opt-label {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--pink-light); padding: 8px 10px; border-radius: 10px;
+    border: 1px solid var(--border-color);
+    font-size: 12px; cursor: pointer; user-select: none;
+    color: var(--text);
+  }
+  .day-opt-label input { accent-color: var(--pink-main); }
+
+  .slot-row-input {
+    display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
+  }
+  .slot-row-input input {
+    flex: 1; padding: 10px 14px; border-radius: 12px;
+    border: 1px solid var(--border-color);
+    font-family: inherit; font-size: 13px;
+    background: var(--pink-light); outline: none;
+    color: var(--text);
+  }
+  .slot-row-input input:focus {
+    border-color: var(--pink-main);
+  }
+  .slot-remove-btn {
+    background: #ffe4ec; color: #d63a5f; border: none;
+    width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
+    font-weight: bold; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  body.dark .slot-remove-btn { background: #4a1c26; color: #ff8fa8; }
+  body.blue .slot-remove-btn { background: #451a03; color: #f87171; }
+
+  .add-column-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; padding: 10px; border-radius: 12px;
+    background: var(--pink-light); border: 1px solid var(--pink-main);
+    color: var(--pink-main); font-weight: 700; font-size: 13px;
+    cursor: pointer; margin-top: 4px; margin-bottom: 16px; transition: 0.2s;
+  }
+  .add-column-btn:hover { background: var(--pink-main); color: #fff; }
+
+  .grid-input-card {
+    background: var(--pink-light); border: 1px solid var(--border-color);
+    border-radius: 14px; padding: 12px; margin-bottom: 12px;
+  }
+  .grid-day-header {
+    font-size: 13px; font-weight: 700; color: var(--pink-main); margin-bottom: 8px;
+  }
+  .grid-input-row {
+    display: grid; gap: 6px;
+  }
+  .grid-input-row input {
+    width: 100%; padding: 8px; font-size: 12px;
+    border-radius: 8px; border: 1px solid var(--border-color);
+    background: var(--card-bg); color: var(--text);
+    font-family: inherit; outline: none;
+  }
+  .grid-input-row input:focus { border-color: var(--pink-main); }
+
+  .validation-msg {
+    font-size: 12px; color: #d63a5f; margin-top: 6px; display: none;
+    padding: 8px 12px; background: #fff0f3; border-radius: 8px;
+  }
+  .validation-msg.show { display: block; }
+  body.dark .validation-msg { background: #3a1e28; color: #ff8098; }
+  body.blue .validation-msg { background: #451a03; color: #f87171; }
+
+  .modal-actions {
+    display: flex; gap: 10px; margin-top: 24px;
+  }
+  .modal-actions button {
+    padding: 12px; border-radius: 12px; border: none;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: 0.15s;
+  }
+  .modal-actions button:active { transform: scale(0.97); }
+  .btn-cancel {
+    flex: 1; background: var(--pink-light); color: var(--pink-dark);
+  }
+  .btn-save {
+    flex: 2; background: var(--pink-main); color: #fff;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">আমার রুটিন 🗓️</h1>
+      <div class="date" id="pageSubtitle">আপনার দৈনন্দিন সময়সূচি</div>
+    </div>
+  </div>
+
+  <button class="add-routine-btn" id="openModalBtn" type="button">+ নতুন রুটিন তৈরি করুন</button>
+  <div id="routineList"></div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay hidden" id="routineModal">
+    <div class="modal-box">
+      <h2 id="modalTitle">নতুন রুটিন</h2>
+      <input type="hidden" id="editRoutineId">
+
+      <label id="lblRoutineName">রুটিনের নাম</label>
+      <input type="text" id="routineName" class="settings-input"
+        placeholder="যেমন: আমার কলেজ রুটিন"
+        style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--border-color); font-family:inherit; font-size:14px; background:var(--pink-light); color:var(--text); outline:none; margin-top:0;">
+
+      <label id="lblRoutineDays">কোন কোন দিন?</label>
+      <div class="day-options-grid" id="dayOptions"></div>
+
+      <label id="lblRoutineSlots">টাইম স্লট (কলাম)</label>
+      <div id="slotsContainer"></div>
+      <button class="add-column-btn" id="addSlotBtn" type="button">+ নতুন কলাম যোগ করুন</button>
+
+      <label id="lblRoutineGrid">সাবজেক্ট (প্রতিটি ঘরের জন্য)</label>
+      <div id="gridInputs"></div>
+
+      <div class="validation-msg" id="validationMsg"></div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" id="closeModalBtn" type="button">বাতিল</button>
+        <button class="btn-save" id="saveRoutineBtn" type="button">সেভ করুন</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const ROUTINE_KEY = 'pinkDiaryRoutines';
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // Days (both bn & en)
+  // ============================================================
+  const DAYS = [
+    { key: 'sun', icon: '☀️', bn: 'রবি', en: 'Sun' },
+    { key: 'mon', icon: '📖', bn: 'সোম', en: 'Mon' },
+    { key: 'tue', icon: '✏️', bn: 'মঙ্গল', en: 'Tue' },
+    { key: 'wed', icon: '🎓', bn: 'বুধ', en: 'Wed' },
+    { key: 'thu', icon: '📜', bn: 'বৃহঃ', en: 'Thu' },
+    { key: 'fri', icon: '🌸', bn: 'শুক্র', en: 'Fri' },
+    { key: 'sat', icon: '☕', bn: 'শনি', en: 'Sat' }
+  ];
+
+  // ============================================================
+  // State
+  // ============================================================
+  let routines = [];
+  let formSlots = [];
+  let formDays = [];
+  let formGrid = {};
+
+  function getRoutines() {
+    try {
+      const raw = localStorage.getItem(ROUTINE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveRoutines(arr) {
+    try {
+      localStorage.setItem(ROUTINE_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) {
+      console.error('Save routines failed:', e);
+      return false;
+    }
+  }
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('pageTitle', window.Lang.routineTitle());
+    setText('pageSubtitle', window.Lang.routineSubtitle());
+    setText('openModalBtn', window.Lang.addRoutineBtn());
+    setText('lblRoutineName', window.Lang.routineNameLabel());
+    setText('lblRoutineDays', window.Lang.routineDaysLabel());
+    setText('lblRoutineSlots', window.Lang.routineSlotsLabel());
+    setText('addSlotBtn', window.Lang.addSlotBtn());
+    setText('lblRoutineGrid', isEn() ? 'Subjects (For each cell)' : 'সাবজেক্ট (প্রতিটি ঘরের জন্য)');
+    setText('closeModalBtn', window.Lang.routineCancelBtn());
+    setText('saveRoutineBtn', window.Lang.routineSaveBtn());
+
+    const nameInput = document.getElementById('routineName');
+    if (nameInput) nameInput.placeholder = window.Lang.routineNamePlaceholder();
+
+    document.title = window.Lang.routineTitle();
+  }
+
+  // ============================================================
+  // Render list
+  // ============================================================
+  function renderRoutines() {
+    const list = document.getElementById('routineList');
+    if (!list) return;
+
+    if (routines.length === 0) {
+      const emptyMsg = window.Lang ? window.Lang.routineEmpty() :
+        (isEn() ? 'No routines yet.<br>Click above to create one!' : 'এখনো কোনো রুটিন নেই।<br>উপরে ক্লিক করে নতুন রুটিন তৈরি করুন!');
+      list.innerHTML = `<div class="empty" style="text-align:center; padding:40px 20px; color:var(--pink-dark);"><span style="font-size:48px; display:block; margin-bottom:10px;">📅</span>${emptyMsg}</div>`;
+      return;
+    }
+
+    const reversed = [...routines].reverse();
+    const en = isEn();
+
+    list.innerHTML = reversed.map(r => `
+      <div class="routine-card" data-routine-id="${escapeHtml(r.id)}">
+        <div class="routine-info">
+          <div class="routine-icon-box">🗓️</div>
+          <div style="min-width:0; flex:1;">
+            <div class="routine-name">${escapeHtml(r.name || (en ? 'Untitled' : 'নামহীন'))}</div>
+            <div class="routine-details">${r.slots ? r.slots.length : 0} ${en ? 'columns' : 'কলাম'} · ${r.days ? r.days.length : 0} ${en ? 'days' : 'দিন'}</div>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="action-btn" data-action="menu" type="button">⋮</button>
+          <div class="dropdown-menu" data-menu>
+            <button class="dropdown-item" data-action="edit" type="button">${en ? '✏️ Edit' : '✏️ এডিট'}</button>
+            <button class="dropdown-item del" data-action="delete" type="button">${en ? '🗑️ Delete' : '🗑️ ডিলিট'}</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Event listeners
+    list.querySelectorAll('.routine-card').forEach(card => {
+      const id = card.dataset.routineId;
+      const menu = card.querySelector('[data-menu]');
+      const actionBtn = card.querySelector('[data-action="menu"]');
+      const editBtn = card.querySelector('[data-action="edit"]');
+      const deleteBtn = card.querySelector('[data-action="delete"]');
+
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.card-actions')) return;
+        openRoutineView(id);
+      });
+
+      actionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = menu.classList.contains('show');
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        if (!isOpen) menu.classList.add('show');
+      });
+
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.remove('show');
+        editRoutine(id);
+      });
+
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.remove('show');
+        deleteRoutine(id);
+      });
+    });
+  }
+
+  // Document click — সব menu বন্ধ
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.card-actions')) return;
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+  });
+
+  // ============================================================
+  // Modal
+  // ============================================================
+  const modal = document.getElementById('routineModal');
+  const validationMsg = document.getElementById('validationMsg');
+
+  function showValidation(msg) {
+    if (!validationMsg) return;
+    validationMsg.textContent = msg;
+    validationMsg.classList.add('show');
+    setTimeout(() => validationMsg.classList.remove('show'), 3500);
+  }
+
+  function resetForm() {
+    formSlots = [{ id: 'slot_' + Date.now(), time: '' }];
+    formDays = ['sun', 'mon', 'tue', 'wed'];
+    formGrid = {};
+    document.getElementById('routineName').value = '';
+    document.getElementById('editRoutineId').value = '';
+  }
+
+  function renderFormUI() {
+    const dayOptions = document.getElementById('dayOptions');
+    const slotsContainer = document.getElementById('slotsContainer');
+    const gridInputs = document.getElementById('gridInputs');
+    if (!dayOptions || !slotsContainer || !gridInputs) return;
+
+    const en = isEn();
+
+    // Days
+    dayOptions.innerHTML = DAYS.map(d => `
+      <label class="day-opt-label">
+        <input type="checkbox" data-day="${d.key}" ${formDays.includes(d.key) ? 'checked' : ''}>
+        <span>${en ? d.en : d.bn}</span>
+      </label>
+    `).join('');
+
+    dayOptions.querySelectorAll('input[data-day]').forEach(cb => {
+      cb.addEventListener('change', () => toggleDay(cb.dataset.day, cb.checked));
+    });
+
+    // Slots
+    slotsContainer.innerHTML = formSlots.map((s, i) => `
+      <div class="slot-row-input">
+        <input type="text" value="${escapeHtml(s.time || '')}" placeholder="${window.Lang ? window.Lang.slotTimePlaceholder() : 'সময় (যেমন: ৯:৪৫)'}" data-slot-idx="${i}">
+        ${formSlots.length > 1 ? `<button class="slot-remove-btn" data-remove-slot="${i}" type="button">✕</button>` : ''}
+      </div>
+    `).join('');
+
+    slotsContainer.querySelectorAll('input[data-slot-idx]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = +inp.dataset.slotIdx;
+        if (formSlots[idx]) formSlots[idx].time = inp.value;
+      });
+    });
+
+    slotsContainer.querySelectorAll('[data-remove-slot]').forEach(btn => {
+      btn.addEventListener('click', () => removeSlot(+btn.dataset.removeSlot));
+    });
+
+    // Grid
+    let gridHtml = '';
+    formDays.forEach(dayKey => {
+      const dayObj = DAYS.find(d => d.key === dayKey);
+      const dayName = dayObj ? (en ? dayObj.en : dayObj.bn) : dayKey;
+      gridHtml += `
+        <div class="grid-input-card">
+          <div class="grid-day-header">${dayObj ? dayObj.icon : ''} ${dayName}</div>
+          <div class="grid-input-row" style="grid-template-columns: repeat(${Math.min(formSlots.length, 3)}, 1fr);">
+            ${formSlots.map((slot, colIndex) => {
+              const cellKey = `${dayKey}_${colIndex}`;
+              const val = formGrid[cellKey] || '';
+              return `<input type="text" value="${escapeHtml(val)}" placeholder="${en ? 'Subject' : 'বিষয়'}" data-grid-key="${cellKey}">`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+    gridInputs.innerHTML = gridHtml || `<div style="font-size:12px; color:var(--pink-dark); text-align:center; padding:10px;">${en ? 'Select days first' : 'আগে দিন সিলেক্ট করুন'}</div>`;
+
+    gridInputs.querySelectorAll('input[data-grid-key]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        formGrid[inp.dataset.gridKey] = inp.value;
+      });
+    });
+  }
+
+  function toggleDay(key, checked) {
+    if (checked) {
+      if (!formDays.includes(key)) formDays.push(key);
+    } else {
+      formDays = formDays.filter(d => d !== key);
+      // ✅ সেই দিনের grid data মুছে ফেলি
+      Object.keys(formGrid).forEach(k => {
+        if (k.startsWith(key + '_')) delete formGrid[k];
+      });
+    }
+    renderFormUI();
+  }
+
+  function removeSlot(index) {
+    if (formSlots.length <= 1) return;
+    formSlots.splice(index, 1);
+
+    // ✅ Grid re-align — পুরনো grid-এর data মুছি যাতে inconsistent না হয়
+    // পুরনো col index বদলে যাবে, তাই safest: সব grid data clear
+    // (ইউজার আবার subject লিখবে, বা edit mode-এ থাকলে এর প্রভাব কম)
+    const newGrid = {};
+    Object.keys(formGrid).forEach(k => {
+      const parts = k.split('_');
+      const dayKey = parts[0];
+      const colIdx = parseInt(parts[1], 10);
+      if (colIdx < index) {
+        newGrid[k] = formGrid[k];
+      } else if (colIdx > index) {
+        newGrid[dayKey + '_' + (colIdx - 1)] = formGrid[k];
+      }
+      // colIdx === index → বাদ
+    });
+    formGrid = newGrid;
+
+    renderFormUI();
+  }
+
+  document.getElementById('addSlotBtn').addEventListener('click', () => {
+    formSlots.push({ id: 'slot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5), time: '' });
+    renderFormUI();
+  });
+
+  // Open modal
+  document.getElementById('openModalBtn').addEventListener('click', () => {
+    resetForm();
+    document.getElementById('modalTitle').textContent = window.Lang ? window.Lang.pomoAddBtn() : 'নতুন রুটিন';
+    renderFormUI();
+    validationMsg.classList.remove('show');
+    modal.classList.remove('hidden');
+  });
+
+  document.getElementById('closeModalBtn').addEventListener('click', () => {
+    modal.classList.add('hidden');
+    resetForm();
+  });
+
+  // Save
+  document.getElementById('saveRoutineBtn').addEventListener('click', () => {
+    const name = document.getElementById('routineName').value.trim();
+    const en = isEn();
+
+    if (!name) return showValidation(en ? 'Enter a routine name!' : 'রুটিনের নাম দিন!');
+    if (formDays.length === 0) return showValidation(window.Lang ? window.Lang.routineNoDays() : 'অন্তত একটি দিন সিলেক্ট করুন!');
+    if (formSlots.length === 0 || formSlots.some(s => !s.time.trim())) {
+      return showValidation(window.Lang ? window.Lang.routineNoSlots() : 'সব টাইম স্লট পূরণ করুন!');
+    }
+
+    const editId = document.getElementById('editRoutineId').value;
+    const routineData = {
+      id: editId || Date.now().toString(),
+      name: name,
+      days: [...formDays],
+      slots: formSlots.map(s => ({ ...s })),
+      grid: { ...formGrid }
+    };
+
+    if (editId) {
+      const idx = routines.findIndex(r => String(r.id) === String(editId));
+      if (idx > -1) routines[idx] = routineData;
+      else routines.push(routineData);
+    } else {
+      routines.push(routineData);
+    }
+
+    if (saveRoutines(routines)) {
+      modal.classList.add('hidden');
+      resetForm();
+      renderRoutines();
+    } else {
+      showValidation(en ? 'Save failed!' : 'সেভ করা যায়নি!');
+    }
+  });
+
+  // Edit
+  function editRoutine(id) {
+    const r = routines.find(x => String(x.id) === String(id));
+    if (!r) {
+      alert(isEn() ? 'Routine not found!' : 'রুটিন খুঁজে পাওয়া যায়নি!');
+      return;
+    }
+
+    formSlots = Array.isArray(r.slots) ? r.slots.map(s => ({ ...s })) : [{ id: 'slot_' + Date.now(), time: '' }];
+    formDays = Array.isArray(r.days) ? [...r.days] : [];
+    formGrid = (r.grid && typeof r.grid === 'object') ? { ...r.grid } : {};
+
+    document.getElementById('routineName').value = r.name || '';
+    document.getElementById('editRoutineId').value = String(r.id);
+    document.getElementById('modalTitle').textContent = window.Lang ? window.Lang.routineEditTitle() : 'রুটিন এডিট করুন';
+
+    renderFormUI();
+    validationMsg.classList.remove('show');
+    modal.classList.remove('hidden');
+  }
+
+  // Delete
+  function deleteRoutine(id) {
+    const en = isEn();
+    if (!confirm(en ? 'Delete this routine?' : 'রুটিনটি মুছে ফেলতে চান?')) return;
+
+    routines = routines.filter(x => String(x.id) !== String(id));
+    saveRoutines(routines);
+    renderRoutines();
+  }
+
+  // Open view
+  function openRoutineView(id) {
+    const r = routines.find(x => String(x.id) === String(id));
+    if (!r) return;
+    try {
+      localStorage.setItem('activeRoutine', JSON.stringify(r));
+    } catch (e) {
+      console.error('Failed to set activeRoutine:', e);
+      return;
+    }
+    location.href = 'routine-view.html';
+  }
+
+  // ============================================================
+  // Edit from view (via localStorage editRoutineId)
+  // ============================================================
+  function checkEditFromView() {
+    const editIdFromView = localStorage.getItem('editRoutineId');
+    if (editIdFromView) {
+      localStorage.removeItem('editRoutineId');
+      setTimeout(() => {
+        if (typeof editRoutine === 'function') {
+          editRoutine(editIdFromView);
+        }
+      }, 200);
+    }
+  }
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updatePageTexts();
+      routines = getRoutines();
+      renderRoutines();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updatePageTexts();
+  routines = getRoutines();
+  renderRoutines();
+  checkEditFromView();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

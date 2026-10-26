@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>আমার প্রোফাইল 👤</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e0568a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="language.js"></script>
+<style>
+  /* ✅ Inline message */
+  .inline-msg {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    display: none;
+    text-align: center;
+    font-weight: 600;
+  }
+  .inline-msg.show { display: block; }
+  .inline-msg.error {
+    background: #ffe0e6;
+    color: #d63a5f;
+  }
+  .inline-msg.success {
+    background: #d4f5e0;
+    color: #28a745;
+  }
+  body.dark .inline-msg.error { background: #4a1c26; color: #ff8fa8; }
+  body.dark .inline-msg.success { background: #20402d; color: #6ddf98; }
+  body.blue .inline-msg.error { background: #451a03; color: #f87171; }
+  body.blue .inline-msg.success { background: #14532d; color: #86efac; }
+
+  /* ✅ Save button disabled state */
+  .save-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* ✅ Loading spinner for avatar */
+  .avatar-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-size: 24px;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='settings.html'">←</button>
+    <div>
+      <h1 id="pageTitle">আমার প্রোফাইল 👤</h1>
+      <div class="date" id="pageSubtitle">নিজেকে personalize করো</div>
+    </div>
+  </div>
+
+  <!-- প্রোফাইল কার্ড -->
+  <div class="profile-card">
+    <div class="profile-avatar-wrap" id="avatarWrap">
+      <div class="profile-avatar" id="avatarPreview">🌸</div>
+      <div class="avatar-edit-badge">📷</div>
+    </div>
+    <input type="file" id="avatarUpload" accept="image/*" style="display:none;">
+    <div class="profile-name" id="displayName">নামহীন ইউজার</div>
+    <div class="profile-nickname" id="displayNickname">ডাকনাম সেট করো</div>
+
+    <div class="profile-stats">
+      <div class="p-stat">
+        <div class="p-stat-val" id="streakVal">0</div>
+        <div class="p-stat-label" id="lblStreak">🔥 স্ট্রিক</div>
+      </div>
+      <div class="p-stat">
+        <div class="p-stat-val" id="bestStreakVal">0</div>
+        <div class="p-stat-label" id="lblBest">🏆 সর্বোচ্চ</div>
+      </div>
+      <div class="p-stat">
+        <div class="p-stat-val" id="totalEntriesVal">0</div>
+        <div class="p-stat-label" id="lblTotal">📖 মোট</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ইনলাইন message -->
+  <div class="inline-msg" id="inlineMsg"></div>
+
+  <!-- তথ্য এডিট -->
+  <div class="settings-card">
+    <div class="settings-label" id="lblInfoTitle" style="margin-bottom:12px">📝 ব্যক্তিগত তথ্য</div>
+
+    <label id="lblName" style="font-size:13px; color:var(--pink-dark); font-weight:600; margin-bottom:4px; display:block;">তোমার নাম</label>
+    <input type="text" id="nameInput" class="settings-input" placeholder="যেমন: রাফি" style="margin-top:0; margin-bottom:12px;">
+
+    <label id="lblNickname" style="font-size:13px; color:var(--pink-dark); font-weight:600; margin-bottom:4px; display:block;">ডাকনাম (ঐচ্ছিক)</label>
+    <input type="text" id="nicknameInput" class="settings-input" placeholder="যেমন: মিম" style="margin-top:0; margin-bottom:12px;">
+
+    <label id="lblBirthday" style="font-size:13px; color:var(--pink-dark); font-weight:600; margin-bottom:4px; display:block;">জন্মদিন (ঐচ্ছিক)</label>
+    <input type="date" id="birthdayInput" class="settings-input" style="margin-top:0;">
+  </div>
+
+  <!-- অ্যাভাটার ইমোজি -->
+  <div class="settings-card">
+    <div class="settings-label" id="lblAvatarTitle" style="margin-bottom:12px">🎭 অ্যাভাটার ইমোজি</div>
+    <div class="settings-desc" id="avatarDesc" style="margin-bottom:10px;">ছবি না দিলে এই ইমোজিগুলোর একটি বেছে নাও</div>
+    <div class="emoji-options" id="emojiOptions">
+      <button class="emoji-opt" data-emoji="🌸" type="button">🌸</button>
+      <button class="emoji-opt" data-emoji="🌷" type="button">🌷</button>
+      <button class="emoji-opt" data-emoji="🌺" type="button">🌺</button>
+      <button class="emoji-opt" data-emoji="🦋" type="button">🦋</button>
+      <button class="emoji-opt" data-emoji="🌟" type="button">🌟</button>
+      <button class="emoji-opt" data-emoji="🌈" type="button">🌈</button>
+      <button class="emoji-opt" data-emoji="🐱" type="button">🐱</button>
+      <button class="emoji-opt" data-emoji="🐼" type="button">🐼</button>
+      <button class="emoji-opt" data-emoji="🦊" type="button">🦊</button>
+      <button class="emoji-opt" data-emoji="🐻" type="button">🐻</button>
+      <button class="emoji-opt" data-emoji="🐨" type="button">🐨</button>
+      <button class="emoji-opt" data-emoji="🦄" type="button">🦄</button>
+      <button class="emoji-opt" data-emoji="👑" type="button">👑</button>
+      <button class="emoji-opt" data-emoji="💎" type="button">💎</button>
+      <button class="emoji-opt" data-emoji="✨" type="button">✨</button>
+    </div>
+  </div>
+
+  <!-- সেভ বাটন -->
+  <button class="save-btn" id="saveProfileBtn" type="button" style="margin-top:8px;">সেভ করো ✨</button>
+  <div class="home-footer" id="footerText">🌸 সব তথ্য শুধু তোমার ফোনেই থাকে</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const PROFILE_KEY = 'pinkDiaryProfile';
+  const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function getProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return (typeof parsed === 'object' && parsed !== null) ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveProfile(p) {
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
+      // ✅ Lang cache invalidate
+      if (window.Lang && window.Lang.invalidateProfileCache) {
+        window.Lang.invalidateProfileCache();
+      }
+      return true;
+    } catch (e) {
+      console.error('Save profile failed:', e);
+      return false;
+    }
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  let currentAvatar = { type: 'emoji', value: '🌸' };
+  let isSaving = false;
+
+  // ============================================================
+  // ভাষা আপডেট
+  // ============================================================
+  function updateProfilePageTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('pageTitle', window.Lang.profileTitle());
+    setText('pageSubtitle', window.Lang.profileSubtitle());
+    setText('lblStreak', window.Lang.profileStreak());
+    setText('lblBest', window.Lang.profileBest());
+    setText('lblTotal', window.Lang.profileTotal());
+    setText('lblInfoTitle', window.Lang.profileInfoTitle());
+    setText('lblName', window.Lang.profileName());
+    setText('lblNickname', window.Lang.profileNickname());
+    setText('lblBirthday', window.Lang.profileBirthday());
+    setText('lblAvatarTitle', window.Lang.profileAvatarTitle());
+    setText('avatarDesc', window.Lang.profileAvatarDesc());
+    setText('footerText', window.Lang.profileFooter());
+
+    const nameInput = document.getElementById('nameInput');
+    if (nameInput) nameInput.placeholder = window.Lang.profileNamePlaceholder();
+    const nicknameInput = document.getElementById('nicknameInput');
+    if (nicknameInput) nicknameInput.placeholder = window.Lang.profileNicknamePlaceholder();
+    const saveBtn = document.getElementById('saveProfileBtn');
+    if (saveBtn) saveBtn.textContent = window.Lang.profileSaveBtn();
+
+    document.title = window.Lang.profileTitle();
+  }
+
+  // ============================================================
+  // Inline message
+  // ============================================================
+  function showInlineMsg(msg, type) {
+    const el = document.getElementById('inlineMsg');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'inline-msg show ' + (type || 'error');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ============================================================
+  // Profile display
+  // ============================================================
+  function updateProfileDisplay() {
+    const p = getProfile();
+    const en = isEn();
+
+    const displayName = p.name ? p.name : (en ? 'Unnamed User' : 'নামহীন ইউজার');
+    const displayNick = p.nickname ? `"${p.nickname}"` : (en ? 'Set nickname' : 'ডাকনাম সেট করো');
+
+    const nameEl = document.getElementById('displayName');
+    const nickEl = document.getElementById('displayNickname');
+    if (nameEl) nameEl.textContent = displayName;
+    if (nickEl) nickEl.textContent = displayNick;
+
+    const av = document.getElementById('avatarPreview');
+    if (av) {
+      // ✅ padding/overflow reset
+      av.style.padding = '';
+      av.style.overflow = '';
+      av.innerHTML = '';
+
+      if (currentAvatar.type === 'image' && currentAvatar.value) {
+        const img = document.createElement('img');
+        img.src = currentAvatar.value;
+        img.alt = 'avatar';
+        img.onerror = () => {
+          av.textContent = '🌸';
+        };
+        av.appendChild(img);
+      } else {
+        av.textContent = currentAvatar.value || '🌸';
+      }
+    }
+
+    // Emoji active state
+    document.querySelectorAll('.emoji-opt').forEach(btn => {
+      if (currentAvatar.type === 'emoji' && btn.dataset.emoji === currentAvatar.value) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // ============================================================
+  // Stats
+  // ============================================================
+  function getEntries() {
+    try {
+      const raw = localStorage.getItem('pinkDiaryEntries');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function dateKeyLocal(d) {
+    // ✅ Local date (UTC নয়)
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function getStreak(entries) {
+    if (!entries || entries.length === 0) return { current: 0, best: 0 };
+
+    const days = [...new Set(entries.map(e => {
+      try {
+        return dateKeyLocal(new Date(e.time));
+      } catch (err) { return null; }
+    }).filter(Boolean))].sort();
+
+    if (days.length === 0) return { current: 0, best: 0 };
+
+    const today = new Date();
+    const todayKey = dateKeyLocal(today);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = dateKeyLocal(yesterday);
+
+    // Current streak
+    let current = 0;
+    if (days.includes(todayKey) || days.includes(yesterdayKey)) {
+      let check = days.includes(todayKey) ? new Date(today) : new Date(yesterday);
+      while (true) {
+        const k = dateKeyLocal(check);
+        if (days.includes(k)) {
+          current++;
+          check.setDate(check.getDate() - 1);
+        } else break;
+      }
+    }
+
+    // Best streak
+    let best = 0, run = 0, prev = null;
+    for (const dayStr of days) {
+      const d = new Date(dayStr + 'T00:00:00');
+      if (prev) {
+        const diff = Math.round((d - prev) / (1000 * 60 * 60 * 24));
+        if (diff === 1) run++;
+        else run = 1;
+      } else run = 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+
+    return { current, best };
+  }
+
+  function updateStats() {
+    const entries = getEntries();
+    const streakData = getStreak(entries);
+
+    const streakVal = document.getElementById('streakVal');
+    const bestStreakVal = document.getElementById('bestStreakVal');
+    const totalEntriesVal = document.getElementById('totalEntriesVal');
+    if (streakVal) streakVal.textContent = streakData.current;
+    if (bestStreakVal) bestStreakVal.textContent = streakData.best;
+    if (totalEntriesVal) totalEntriesVal.textContent = entries.length;
+  }
+
+  // ============================================================
+  // Load
+  // ============================================================
+  function loadProfileUI() {
+    const p = getProfile();
+    const nameInput = document.getElementById('nameInput');
+    const nicknameInput = document.getElementById('nicknameInput');
+    const birthdayInput = document.getElementById('birthdayInput');
+    if (nameInput) nameInput.value = p.name || '';
+    if (nicknameInput) nicknameInput.value = p.nickname || '';
+    if (birthdayInput) birthdayInput.value = p.birthday || '';
+
+    if (p.avatar && p.avatar.type && p.avatar.value) {
+      currentAvatar = { type: p.avatar.type, value: p.avatar.value };
+    } else {
+      currentAvatar = { type: 'emoji', value: '🌸' };
+    }
+
+    updateProfileDisplay();
+    updateStats();
+  }
+
+  // ============================================================
+  // Avatar upload
+  // ============================================================
+  const avatarWrap = document.getElementById('avatarWrap');
+  const avatarUpload = document.getElementById('avatarUpload');
+
+  if (avatarWrap && avatarUpload) {
+    avatarWrap.addEventListener('click', () => avatarUpload.click());
+
+    avatarUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > MAX_AVATAR_SIZE) {
+        showInlineMsg(
+          isEn() ? 'Image too large! Max 5MB.' : 'ছবি অনেক বড়! সর্বোচ্চ 5MB।',
+          'error'
+        );
+        e.target.value = '';
+        return;
+      }
+
+      // Loading state
+      const av = document.getElementById('avatarPreview');
+      if (av) {
+        const loader = document.createElement('div');
+        loader.className = 'avatar-loading';
+        loader.textContent = '⏳';
+        av.appendChild(loader);
+      }
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        // ✅ Resize + compress (max 512x512)
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 512;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            const scale = maxDim / Math.max(w, h);
+            w = Math.round(w * scale);
+            h = Math.round(h * scale);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+          currentAvatar = { type: 'image', value: dataUrl };
+          updateProfileDisplay();
+        };
+        img.onerror = () => {
+          showInlineMsg(
+            isEn() ? 'Failed to load image' : 'ছবি লোড করা যায়নি',
+            'error'
+          );
+          updateProfileDisplay();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+  }
+
+  // Emoji options
+  document.querySelectorAll('.emoji-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentAvatar = { type: 'emoji', value: btn.dataset.emoji };
+      updateProfileDisplay();
+    });
+  });
+
+  // ============================================================
+  // Save
+  // ============================================================
+  const saveBtn = document.getElementById('saveProfileBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      if (isSaving) return;
+      isSaving = true;
+      saveBtn.disabled = true;
+
+      const p = getProfile();
+      const nameInput = document.getElementById('nameInput');
+      const nicknameInput = document.getElementById('nicknameInput');
+      const birthdayInput = document.getElementById('birthdayInput');
+
+      p.name = nameInput ? nameInput.value.trim() : '';
+      p.nickname = nicknameInput ? nicknameInput.value.trim() : '';
+      p.birthday = birthdayInput ? birthdayInput.value : '';
+      p.avatar = currentAvatar;
+
+      // পুরনো tone সেটিং ডিলিট (যদি থাকে)
+      if (p.tone) delete p.tone;
+
+      const ok = saveProfile(p);
+      isSaving = false;
+      saveBtn.disabled = false;
+
+      if (ok) {
+        updateProfileDisplay();
+        showInlineMsg(
+          isEn() ? 'Profile saved ✓' : 'প্রোফাইল সেভ হয়েছে ✓',
+          'success'
+        );
+
+        // ✅ 500ms পর settings-এ ফিরে যাও
+        setTimeout(() => {
+          location.href = 'settings.html';
+        }, 600);
+      } else {
+        showInlineMsg(
+          isEn() ? 'Save failed. Try again.' : 'সেভ করা যায়নি। আবার চেষ্টা করুন।',
+          'error'
+        );
+      }
+    });
+  }
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updateProfilePageTexts();
+      loadProfileUI();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updateProfilePageTexts();
+  loadProfileUI();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

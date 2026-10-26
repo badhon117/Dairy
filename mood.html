@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>মুড ট্র্যাকার 💭</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e0568a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  /* ✅ Animated bars */
+  .mood-stat-bar {
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ✅ Percentage text */
+  .mood-stat-percent {
+    font-size: 11px;
+    color: var(--pink-dark);
+    font-weight: 600;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* ✅ Day row click hint */
+  .mood-day-row {
+    cursor: pointer;
+  }
+  .mood-day-row:hover {
+    background: var(--pink-light);
+  }
+
+  /* ✅ Empty state better */
+  .mood-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--pink-dark);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .mood-empty .big {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  /* ✅ Top mood trophy */
+  .top-mood-trophy {
+    font-size: 22px;
+    margin-left: 8px;
+  }
+
+  /* ✅ Summary card responsive */
+  .mood-summary-main {
+    font-size: 56px;
+    line-height: 1.1;
+  }
+
+  /* ✅ Navigation transition */
+  .cal-month {
+    transition: opacity 0.2s;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">মুড ট্র্যাকার 💭</h1>
+      <div class="date" id="moodPageTitle">তোমার অনুভূতির হিসাব</div>
+    </div>
+  </div>
+
+  <div class="cal-nav">
+    <button class="cal-nav-btn" id="prevMonth" type="button">‹</button>
+    <div class="cal-month" id="monthLabel"></div>
+    <button class="cal-nav-btn" id="nextMonth" type="button">›</button>
+  </div>
+
+  <div class="mood-summary-card">
+    <div class="mood-summary-title" id="summaryTitle">এই মাসের predominant মুড</div>
+    <div class="mood-summary-main" id="topMood">—</div>
+    <div class="mood-summary-sub" id="topMoodCount">কোনো এন্ট্রি নেই</div>
+  </div>
+
+  <div class="section-title" id="statsTitle">📊 মুডের হিসাব</div>
+  <div class="mood-stats" id="moodStats"></div>
+
+  <div class="section-title" id="daysTitle">📅 দিন অনুযায়ী</div>
+  <div class="mood-days" id="moodDays"></div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const STORAGE_KEY = 'pinkDiaryEntries';
+  const MOOD_ORDER = ['😊', '😌', '🥰', '🥴', '😐', '😔', '🥹', '😭', '😡', '😴'];
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function getEntries() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function dateKey(d) {
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function entryDateKey(iso) {
+    try {
+      return dateKey(new Date(iso));
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  let currentMonth = new Date();
+  currentMonth.setDate(1);
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('pageTitle', window.Lang.moodTitle());
+    setText('moodPageTitle', window.Lang.moodSubtitle());
+    setText('summaryTitle', window.Lang.moodSummaryTitle());
+    setText('statsTitle', window.Lang.moodStatsTitle());
+    setText('daysTitle', window.Lang.moodDaysTitle());
+
+    document.title = window.Lang.moodTitle();
+  }
+
+  // ============================================================
+  // Render
+  // ============================================================
+  function renderMood() {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const en = isEn();
+
+    // Month label
+    const monthLabel = document.getElementById('monthLabel');
+    if (monthLabel) {
+      monthLabel.textContent = currentMonth.toLocaleDateString(
+        en ? 'en-US' : 'bn-BD',
+        { month: 'long', year: 'numeric' }
+      );
+    }
+
+    // Filter this month's entries
+    const allEntries = getEntries();
+    const monthEntries = allEntries.filter(e => {
+      try {
+        const d = new Date(e.time);
+        return d.getFullYear() === year && d.getMonth() === month;
+      } catch (err) {
+        return false;
+      }
+    });
+
+    // Count moods
+    const counts = {};
+    monthEntries.forEach(e => {
+      if (e.mood) counts[e.mood] = (counts[e.mood] || 0) + 1;
+    });
+
+    const totalWithMood = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    // Top mood
+    let topMood = null;
+    let topCount = 0;
+    Object.keys(counts).forEach(m => {
+      if (counts[m] > topCount) {
+        topCount = counts[m];
+        topMood = m;
+      }
+    });
+
+    const topMoodEl = document.getElementById('topMood');
+    const topMoodCountEl = document.getElementById('topMoodCount');
+
+    if (topMoodEl) topMoodEl.textContent = topMood || '—';
+    if (topMoodCountEl) {
+      if (topMood) {
+        topMoodCountEl.textContent = en
+          ? `Appeared ${topCount} times`
+          : `${topCount} বার এসেছে`;
+      } else {
+        topMoodCountEl.textContent = en
+          ? 'No moods given this month'
+          : 'এই মাসে কোনো মুড দেওয়া হয়নি';
+      }
+    }
+
+    // Stats bars
+    const statsEl = document.getElementById('moodStats');
+    if (statsEl) {
+      if (totalWithMood === 0) {
+        const emptyText = en
+          ? 'No moods given this month yet.'
+          : 'এই মাসে এখনো কোনো মুড দেওয়া হয়নি।';
+        statsEl.innerHTML = `<div class="mood-empty"><span class="big">💭</span><p>${emptyText}</p></div>`;
+      } else {
+        statsEl.innerHTML = MOOD_ORDER
+          .filter(m => counts[m])
+          .map(m => {
+            const percent = Math.round((counts[m] / totalWithMood) * 100);
+            return `
+              <div class="mood-stat-row">
+                <div class="mood-stat-emoji">${m}</div>
+                <div class="mood-stat-bar-wrap">
+                  <div class="mood-stat-bar" style="width:0%" data-target="${percent}%"></div>
+                </div>
+                <div class="mood-stat-count">${counts[m]}</div>
+                <div class="mood-stat-percent">${percent}%</div>
+              </div>
+            `;
+          }).join('');
+
+        // ✅ Animate bars in (width 0% → target)
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            statsEl.querySelectorAll('.mood-stat-bar').forEach(bar => {
+              const target = bar.dataset.target;
+              if (target) bar.style.width = target;
+            });
+          }, 30);
+        });
+      }
+    }
+
+    // Day list
+    const daysEl = document.getElementById('moodDays');
+    if (daysEl) {
+      const dayMap = {};
+      monthEntries.forEach(e => {
+        const k = entryDateKey(e.time);
+        if (e.mood && k) dayMap[k] = e.mood;
+      });
+
+      const sortedDays = Object.keys(dayMap).sort().reverse();
+
+      if (sortedDays.length === 0) {
+        const emptyText = en
+          ? 'Nothing here this month yet.'
+          : 'এই মাসে এখনো কিছু নেই।';
+        daysEl.innerHTML = `<div class="mood-empty"><span class="big">🌷</span><p>${emptyText}</p></div>`;
+      } else {
+        daysEl.innerHTML = sortedDays.map(k => {
+          const d = new Date(k + 'T00:00:00');
+          const label = d.toLocaleDateString(
+            en ? 'en-US' : 'bn-BD',
+            { day: 'numeric', month: 'short', weekday: 'short' }
+          );
+          return `
+            <div class="mood-day-row" data-date-key="${escapeHtml(k)}">
+              <div class="mood-day-date">${label}</div>
+              <div class="mood-day-emoji">${dayMap[k]}</div>
+            </div>
+          `;
+        }).join('');
+
+        // ✅ Click → calendar.html-এ specific date highlight
+        daysEl.querySelectorAll('.mood-day-row').forEach(row => {
+          row.addEventListener('click', () => {
+            const key = row.dataset.dateKey;
+            try {
+              localStorage.setItem('calSelectedDate', key);
+            } catch (e) {}
+            location.href = 'calendar.html';
+          });
+        });
+      }
+    }
+
+    // Nav buttons
+    updateNavButtons();
+  }
+
+  function updateNavButtons() {
+    const now = new Date();
+    const currentYM = currentMonth.getFullYear() * 12 + currentMonth.getMonth();
+    const maxYM = now.getFullYear() * 12 + now.getMonth();
+
+    const prevBtn = document.getElementById('prevMonth');
+    const nextBtn = document.getElementById('nextMonth');
+
+    if (prevBtn) {
+      const minYM = (now.getFullYear() - 5) * 12 + now.getMonth();
+      prevBtn.disabled = currentYM <= minYM;
+    }
+
+    if (nextBtn) {
+      nextBtn.disabled = currentYM >= maxYM;
+    }
+  }
+
+  // ============================================================
+  // Nav events
+  // ============================================================
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    currentMonth.setMonth(currentMonth.getMonth() - 1);
+    renderMood();
+  });
+
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    currentMonth.setMonth(currentMonth.getMonth() + 1);
+    renderMood();
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updatePageTexts();
+  renderMood();
+
+  // ============================================================
+  // ✅ pageshow → stale data ঠিক
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updatePageTexts();
+      renderMood();
+    }
+  });
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

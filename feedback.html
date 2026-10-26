@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>ফিডব্যাক ও রেটিং 💬</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body.fb-page {
+    background: var(--card-bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+  }
+
+  .fb-container {
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--card-bg);
+  }
+
+  .fb-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .fb-back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--pink-light);
+    color: var(--pink-main);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.15s;
+  }
+  .fb-back-btn:active {
+    background: var(--pink-soft);
+    transform: scale(0.95);
+  }
+  .fb-header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .fb-hero {
+    text-align: center;
+    padding: 36px 20px 24px;
+    background: linear-gradient(180deg, var(--pink-light) 0%, var(--card-bg) 100%);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .fb-hero-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+    line-height: 1;
+  }
+  .fb-hero-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 8px 0;
+  }
+  .fb-hero-sub {
+    font-size: 14px;
+    color: var(--pink-dark);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .fb-section {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .fb-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fb-optional {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--pink-mid);
+    margin-left: 4px;
+  }
+
+  .fb-star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0 12px;
+  }
+  .fb-star {
+    font-size: 40px;
+    cursor: pointer;
+    color: var(--pink-mid);
+    transition: 0.15s;
+    user-select: none;
+    line-height: 1;
+  }
+  .fb-star.active {
+    color: #FFC107;
+  }
+  .fb-star:active {
+    transform: scale(0.85);
+  }
+
+  .fb-rating-text {
+    text-align: center;
+    font-size: 14px;
+    color: var(--pink-dark);
+    font-weight: 600;
+    min-height: 20px;
+    margin: 0;
+  }
+  .fb-rating-text.has-value {
+    color: var(--pink-main);
+  }
+
+  .fb-cat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .fb-cat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .fb-cat-row:last-child {
+    border-bottom: none;
+  }
+  .fb-cat-label {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .fb-cat-stars {
+    display: flex;
+    gap: 4px;
+  }
+  .fb-cat-star {
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--pink-mid);
+    user-select: none;
+    line-height: 1;
+    transition: 0.1s;
+  }
+  .fb-cat-star.active {
+    color: #FFC107;
+  }
+
+  .fb-type-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .fb-type-chip {
+    padding: 8px 16px;
+    background: var(--pink-light);
+    border: 1.5px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pink-dark);
+    cursor: pointer;
+    transition: 0.15s;
+    font-family: inherit;
+  }
+  .fb-type-chip:active {
+    transform: scale(0.96);
+  }
+  .fb-type-chip.active {
+    background: var(--pink-main);
+    color: #FFFFFF;
+    border-color: var(--pink-main);
+  }
+
+  /* ✅ ডার্ক এবং ব্লু থিমে চিপস স্পষ্ট করার জন্য ফিক্স */
+  body.blue .fb-type-chip.active {
+    background: #3b82f6 !important; /* উজ্জ্বল নীল */
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+  }
+  body.dark .fb-type-chip.active {
+    background: #e0568a !important; /* ডার্ক মোডে স্পষ্ট গোলাপি */
+    color: #ffffff !important;
+    border-color: #e0568a !important;
+    box-shadow: 0 0 8px rgba(224, 86, 138, 0.4);
+  }
+
+  /* ✅ ডার্ক এবং ব্লু থিমে বাটনের স্পষ্টতা */
+  body.blue .fb-submit-btn {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+  }
+  body.dark .fb-submit-btn {
+    background: #e0568a !important;
+    color: #ffffff !important;
+  }
+
+  .fb-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+    transition: 0.15s;
+    margin-bottom: 12px;
+  }
+  .fb-input:focus {
+    border-color: var(--pink-main);
+    box-shadow: 0 0 0 3px rgba(224, 86, 138, 0.1);
+  }
+  .fb-input::placeholder {
+    color: var(--pink-mid);
+  }
+  .fb-textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  .fb-submit-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s;
+    background: var(--pink-main);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px var(--card-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .fb-submit-btn:active {
+    transform: scale(0.98);
+  }
+  .fb-submit-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .fb-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 20px;
+    color: var(--pink-mid);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .fb-divider::before,
+  .fb-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+  }
+
+  .fb-alt-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 20px 28px;
+  }
+  .fb-alt-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--pink-light);
+    color: var(--pink-dark);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .fb-alt-btn:active {
+    background: var(--card-bg);
+    border-color: var(--pink-main);
+    color: var(--pink-main);
+    transform: scale(0.98);
+  }
+
+  .fb-footer {
+    padding: 20px 20px 32px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--pink-mid);
+    line-height: 1.7;
+    border-top: 1px solid var(--border-color);
+  }
+
+  /* Reset button */
+  .fb-reset-btn {
+    background: none;
+    border: none;
+    color: var(--pink-dark);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    margin: 8px auto 0;
+    display: block;
+    font-family: inherit;
+    opacity: 0.7;
+  }
+  .fb-reset-btn:hover { opacity: 1; }
+
+  /* Inline message */
+  .fb-inline-msg {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    display: none;
+    text-align: center;
+    font-weight: 600;
+  }
+  .fb-inline-msg.show { display: block; }
+  .fb-inline-msg.error {
+    background: #ffe0e6;
+    color: #d63a5f;
+  }
+  .fb-inline-msg.success {
+    background: #d4f5e0;
+    color: #28a745;
+  }
+  body.dark .fb-inline-msg.error { background: #4a1c26; color: #ff8fa8; }
+  body.dark .fb-inline-msg.success { background: #20402d; color: #6ddf98; }
+  body.blue .fb-inline-msg.error { background: #451a03; color: #f87171; }
+  body.blue .fb-inline-msg.success { background: #14532d; color: #86efac; }
+</style>
+</head>
+<body class="fb-page">
+<div class="fb-container">
+
+  <div class="fb-header">
+    <button class="fb-back-btn" onclick="location.href='index.html'" type="button">←</button>
+    <div class="fb-header-title" id="fbTitle">ফিডব্যাক ও রেটিং</div>
+  </div>
+
+  <div class="fb-hero">
+    <div class="fb-hero-icon">🌸</div>
+    <h1 class="fb-hero-title" id="fbHeroTitle">তোমার মতামত জানাও</h1>
+    <p class="fb-hero-sub" id="fbHeroSub">তোমার ফিডব্যাক আমাদের আরও ভালো করতে সাহায্য করে</p>
+  </div>
+
+  <!-- সামগ্রিক রেটিং -->
+  <div class="fb-section">
+    <h2 class="fb-section-title" id="fbRatingTitle">⭐ অ্যাপটাকে রেটিং দাও</h2>
+    <div class="fb-star-rating" id="fbStarRating">
+      <span class="fb-star" data-rating="1">☆</span>
+      <span class="fb-star" data-rating="2">☆</span>
+      <span class="fb-star" data-rating="3">☆</span>
+      <span class="fb-star" data-rating="4">☆</span>
+      <span class="fb-star" data-rating="5">☆</span>
+    </div>
+    <p class="fb-rating-text" id="fbRatingText"></p>
+    <button class="fb-reset-btn" id="fbResetRating" type="button" style="display:none;">রেটিং রিসেট</button>
+  </div>
+
+  <!-- বিস্তারিত রেটিং -->
+  <div class="fb-section">
+    <h2 class="fb-section-title">
+      <span id="fbDetailTitle">📊 বিস্তারিত রেটিং</span>
+      <span class="fb-optional" id="fbOptional">(ঐচ্ছিক)</span>
+    </h2>
+    <div class="fb-cat-list" id="fbCatList"></div>
+  </div>
+
+  <!-- বার্তা -->
+  <div class="fb-section">
+    <h2 class="fb-section-title" id="fbMessageTitle">💬 তোমার বার্তা</h2>
+
+    <div style="margin-bottom: 8px; font-size: 13px; color: var(--pink-dark); font-weight: 500;" id="fbTypeLabel">ধরন:</div>
+    <div class="fb-type-chips" id="fbTypeChips"></div>
+
+    <input type="text" class="fb-input" id="fbName" placeholder="তোমার নাম (ঐচ্ছিক)">
+
+    <textarea class="fb-input fb-textarea" id="fbMessage" placeholder="তোমার মতামত, সমস্যা বা পরামর্শ লিখো..."></textarea>
+
+    <div class="fb-inline-msg" id="fbInlineMsg"></div>
+
+    <button class="fb-submit-btn" id="fbSubmit" type="button" style="margin-top: 8px;">
+      <span>📤</span>
+      <span id="fbSubmitText">ইমেইলে পাঠাও</span>
+    </button>
+  </div>
+
+  <!-- অল্টারনেট -->
+  <div class="fb-alt-actions">
+    <div class="fb-divider" id="fbOrText">অথবা</div>
+    <a href="faq.html" class="fb-alt-btn">
+      <span>❓</span>
+      <span id="fbFaqText">সাহায্য / FAQ দেখো</span>
+    </a>
+    <a href="index.html" class="fb-alt-btn">
+      <span>🏠</span>
+      <span id="fbHomeText">হোমে ফিরে যাও</span>
+    </a>
+  </div>
+
+  <div class="fb-footer">
+    <span id="fbFooterText">তোমার মতামত আমাদের কাছে মূল্যবান 🌸</span>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const CONTACT_EMAIL = 'nishatbadhon117+diary@gmail.com';
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  let overallRating = 0;
+  let categoryRatings = {
+    design: 0,
+    performance: 0,
+    usability: 0,
+    features: 0
+  };
+  let selectedType = '';
+  let isSending = false;
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updateTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('fbTitle', window.Lang.fbTitle());
+    setText('fbHeroTitle', window.Lang.fbHeroTitle());
+    setText('fbHeroSub', window.Lang.fbHeroSub());
+    setText('fbRatingTitle', window.Lang.fbRatingTitle());
+    setText('fbDetailTitle', window.Lang.fbDetailTitle());
+    setText('fbOptional', window.Lang.fbOptional());
+    setText('fbMessageTitle', window.Lang.fbMessageTitle());
+    setText('fbTypeLabel', window.Lang.fbTypeLabel());
+    setText('fbSubmitText', window.Lang.fbSubmitText());
+    setText('fbOrText', window.Lang.fbOrText());
+    setText('fbFaqText', window.Lang.fbFaqText());
+    setText('fbHomeText', window.Lang.fbHomeText());
+    setText('fbFooterText', window.Lang.fbFooterText());
+
+    const fbName = document.getElementById('fbName');
+    if (fbName) fbName.placeholder = window.Lang.fbNamePlaceholder();
+    const fbMessage = document.getElementById('fbMessage');
+    if (fbMessage) fbMessage.placeholder = window.Lang.fbMessagePlaceholder();
+
+    updateRatingText();
+    renderCategoryRatings();
+    renderTypeChips();
+
+    document.title = window.Lang.fbTitle() + ' 💬';
+  }
+
+  // ============================================================
+  // Star rating (overall)
+  // ============================================================
+  function updateRatingText() {
+    if (!window.Lang) return;
+
+    const textEl = document.getElementById('fbRatingText');
+    if (!textEl) return;
+
+    const ratings = {
+      0: window.Lang.fbRatingEmpty(),
+      1: window.Lang.fbRating1(),
+      2: window.Lang.fbRating2(),
+      3: window.Lang.fbRating3(),
+      4: window.Lang.fbRating4(),
+      5: window.Lang.fbRating5()
+    };
+
+    if (overallRating === 0) {
+      textEl.textContent = ratings[0];
+      textEl.classList.remove('has-value');
+    } else {
+      textEl.textContent = `${overallRating}/5 — ${ratings[overallRating]}`;
+      textEl.classList.add('has-value');
+    }
+
+    const resetBtn = document.getElementById('fbResetRating');
+    if (resetBtn) resetBtn.style.display = overallRating > 0 ? 'block' : 'none';
+  }
+
+  function renderOverallStars() {
+    const stars = document.querySelectorAll('#fbStarRating .fb-star');
+    stars.forEach((s, i) => {
+      if (i < overallRating) {
+        s.textContent = '★';
+        s.classList.add('active');
+      } else {
+        s.textContent = '☆';
+        s.classList.remove('active');
+      }
+    });
+  }
+
+  // ============================================================
+  // Category ratings
+  // ============================================================
+  function renderCategoryRatings() {
+    if (!window.Lang) return;
+
+    const catData = [
+      { key: 'design', icon: '🎨', label: window.Lang.fbCatDesign() },
+      { key: 'performance', icon: '⚡', label: window.Lang.fbCatPerformance() },
+      { key: 'usability', icon: '📱', label: window.Lang.fbCatUsability() },
+      { key: 'features', icon: '🎯', label: window.Lang.fbCatFeatures() }
+    ];
+
+    const catList = document.getElementById('fbCatList');
+    if (!catList) return;
+
+    catList.innerHTML = catData.map(cat => `
+      <div class="fb-cat-row">
+        <div class="fb-cat-label">${cat.icon} ${cat.label}</div>
+        <div class="fb-cat-stars" data-cat="${cat.key}">
+          <span class="fb-cat-star" data-value="1" data-cat-key="${cat.key}">☆</span>
+          <span class="fb-cat-star" data-value="2" data-cat-key="${cat.key}">☆</span>
+          <span class="fb-cat-star" data-value="3" data-cat-key="${cat.key}">☆</span>
+          <span class="fb-cat-star" data-value="4" data-cat-key="${cat.key}">☆</span>
+          <span class="fb-cat-star" data-value="5" data-cat-key="${cat.key}">☆</span>
+        </div>
+      </div>
+    `).join('');
+
+    // Render existing values
+    catList.querySelectorAll('.fb-cat-stars').forEach(container => {
+      const catKey = container.dataset.cat;
+      const val = categoryRatings[catKey] || 0;
+      const stars = container.querySelectorAll('.fb-cat-star');
+      stars.forEach((s, i) => {
+        if (i < val) {
+          s.textContent = '★';
+          s.classList.add('active');
+        } else {
+          s.textContent = '☆';
+          s.classList.remove('active');
+        }
+      });
+    });
+
+    // Event binding
+    catList.querySelectorAll('.fb-cat-star').forEach(star => {
+      star.addEventListener('click', () => {
+        const catKey = star.dataset.catKey;
+        const val = parseInt(star.dataset.value, 10);
+        categoryRatings[catKey] = val;
+
+        const container = star.closest('.fb-cat-stars');
+        if (!container) return;
+        const stars = container.querySelectorAll('.fb-cat-star');
+        stars.forEach((s, i) => {
+          if (i < val) {
+            s.textContent = '★';
+            s.classList.add('active');
+          } else {
+            s.textContent = '☆';
+            s.classList.remove('active');
+          }
+        });
+      });
+    });
+  }
+
+  // ============================================================
+  // Type chips
+  // ============================================================
+  function renderTypeChips() {
+    if (!window.Lang) return;
+
+    const typeData = [
+      { key: 'praise', label: window.Lang.fbTypePraise() },
+      { key: 'issue', label: window.Lang.fbTypeIssue() },
+      { key: 'feature', label: window.Lang.fbTypeFeature() },
+      { key: 'other', label: window.Lang.fbTypeOther() }
+    ];
+
+    const typeChips = document.getElementById('fbTypeChips');
+    if (!typeChips) return;
+
+    typeChips.innerHTML = typeData.map(t => `
+      <button class="fb-type-chip ${selectedType === t.key ? 'active' : ''}" data-type="${t.key}" type="button">${t.label}</button>
+    `).join('');
+
+    typeChips.querySelectorAll('.fb-type-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        typeChips.querySelectorAll('.fb-type-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        selectedType = chip.dataset.type;
+      });
+    });
+  }
+
+  // ============================================================
+  // Inline message
+  // ============================================================
+  function showInlineMsg(msg, type) {
+    const el = document.getElementById('fbInlineMsg');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'fb-inline-msg show ' + (type || 'error');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  // ============================================================
+  // Overall star events
+  // ============================================================
+  const starRating = document.getElementById('fbStarRating');
+  if (starRating) {
+    starRating.querySelectorAll('.fb-star').forEach(star => {
+      star.addEventListener('click', () => {
+        const val = parseInt(star.dataset.rating, 10);
+        overallRating = val;
+        renderOverallStars();
+        updateRatingText();
+      });
+    });
+  }
+
+  const resetRatingBtn = document.getElementById('fbResetRating');
+  if (resetRatingBtn) {
+    resetRatingBtn.addEventListener('click', () => {
+      overallRating = 0;
+      categoryRatings = { design: 0, performance: 0, usability: 0, features: 0 };
+      renderOverallStars();
+      updateRatingText();
+      renderCategoryRatings();
+    });
+  }
+
+  // ============================================================
+  // Submit
+  // ============================================================
+  document.getElementById('fbSubmit').addEventListener('click', () => {
+    if (isSending) return;
+
+    const name = document.getElementById('fbName').value.trim();
+    const message = document.getElementById('fbMessage').value.trim();
+    const en = isEn();
+
+    if (!message) {
+      showInlineMsg(window.Lang ? window.Lang.fbNoMessage() : 'আগে বার্তা লিখো!', 'error');
+      document.getElementById('fbMessage').focus();
+      return;
+    }
+
+    isSending = true;
+    const submitBtn = document.getElementById('fbSubmit');
+    submitBtn.disabled = true;
+
+    // টাইপ টেক্সট
+    let typeText = window.Lang ? window.Lang.fbTypeOther() : 'অন্যান্য';
+    if (selectedType) {
+      const typeMap = {
+        praise: window.Lang ? window.Lang.fbTypePraise() : 'প্রশংসা',
+        issue: window.Lang ? window.Lang.fbTypeIssue() : 'সমস্যা',
+        feature: window.Lang ? window.Lang.fbTypeFeature() : 'ফিচার রিকোয়েস্ট',
+        other: window.Lang ? window.Lang.fbTypeOther() : 'অন্যান্য'
+      };
+      typeText = typeMap[selectedType] || typeText;
+    }
+
+    const subject = en
+      ? `[Diary App] Feedback - ${overallRating}/5 stars`
+      : `[ডায়েরি অ্যাপ] ফিডব্যাক - ${overallRating}/5 ⭐`;
+
+    const lines = [];
+    lines.push(en ? 'Hello,' : 'আসসালামু আলাইকুম,');
+    lines.push('');
+    lines.push(en ? 'A new feedback from the "Diary" app:' : '"ডায়েরি" অ্যাপ থেকে একটি নতুন ফিডব্যাক এসেছে:');
+    lines.push('');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━');
+    lines.push(en ? '📊 RATING' : '📊 রেটিং');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    lines.push(`${en ? 'Overall' : 'সামগ্রিক'}: ${overallRating || '-'}/5 ${overallRating ? '⭐'.repeat(overallRating) : ''}`);
+    lines.push('');
+
+    if (Object.values(categoryRatings).some(v => v > 0)) {
+      lines.push(en ? 'Details:' : 'বিস্তারিত:');
+      const catLabels = {
+        design: { icon: '🎨', label: window.Lang ? window.Lang.fbCatDesign() : 'ডিজাইন' },
+        performance: { icon: '⚡', label: window.Lang ? window.Lang.fbCatPerformance() : 'পারফরম্যান্স' },
+        usability: { icon: '📱', label: window.Lang ? window.Lang.fbCatUsability() : 'ব্যবহারযোগ্যতা' },
+        features: { icon: '🎯', label: window.Lang ? window.Lang.fbCatFeatures() : 'ফিচার' }
+      };
+      Object.keys(categoryRatings).forEach(key => {
+        if (categoryRatings[key] > 0) {
+          lines.push(`  ${catLabels[key].icon} ${catLabels[key].label}: ${categoryRatings[key]}/5`);
+        }
+      });
+      lines.push('');
+    }
+
+    lines.push('━━━━━━━━━━━━━━━━━━━━━');
+    lines.push(en ? '👤 SENDER' : '👤 প্রেরক');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    lines.push(`${en ? 'Name' : 'নাম'}: ${name || (en ? 'Anonymous' : 'অজানা')}`);
+    lines.push(`${en ? 'Type' : 'ধরন'}: ${typeText}`);
+    lines.push('');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━');
+    lines.push(en ? '💬 MESSAGE' : '💬 বার্তা');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    lines.push(message);
+    lines.push('');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    lines.push(`${en ? 'Sent' : 'পাঠানো'}: ${new Date().toLocaleString(en ? 'en-US' : 'bn-BD')}`);
+
+    const body = lines.join('\n');
+    const mailtoLink = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    try {
+      window.location.href = mailtoLink;
+      showInlineMsg(
+        window.Lang ? window.Lang.fbEmailOpening() : 'ইমেইল অ্যাপ খুলছে...',
+        'success'
+      );
+      setTimeout(() => {
+        isSending = false;
+        submitBtn.disabled = false;
+      }, 2000);
+    } catch (e) {
+      showInlineMsg(
+        (window.Lang ? window.Lang.fbEmailError() : 'ইমেইল খোলা যায়নি: ') + CONTACT_EMAIL,
+        'error'
+      );
+      isSending = false;
+      submitBtn.disabled = false;
+    }
+  });
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updateTexts();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updateTexts();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

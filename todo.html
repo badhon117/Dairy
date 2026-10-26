@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>টুডু লিস্ট 📝</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e0568a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="language.js"></script>
+<style>
+  /* ✅ Task filter tabs */
+  .todo-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .todo-filters::-webkit-scrollbar { display: none; }
+
+  .tf-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--pink-mid);
+    background: #fffafc;
+    color: var(--pink-dark);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .tf-btn.active {
+    background: var(--pink-main);
+    color: #fff;
+    border-color: var(--pink-main);
+  }
+  .tf-btn:active { transform: scale(0.96); }
+  body.dark .tf-btn { background: #2f2329; border-color: #4a3340; color: #b8a0ac; }
+  body.dark .tf-btn.active { background: #e0568a; color: #fff; }
+  body.blue .tf-btn { background: #1e293b; border-color: #334155; color: #94a3b8; }
+  body.blue .tf-btn.active { background: #60a5fa; color: #0f172a; }
+
+  /* ✅ Task entry with better layout */
+  .task-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .task-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--pink-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: 0.15s;
+  }
+  .task-check.done {
+    background: var(--pink-main);
+  }
+  .task-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .task-text {
+    font-size: 15.5px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  .task-text.done {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  /* ✅ Overdue badge */
+  .task-overdue-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #ffe0e6;
+    color: #d63a5f;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  body.dark .task-overdue-badge { background: #4a1c26; color: #ff8fa8; }
+
+  /* ✅ Task action buttons (visible) */
+  .task-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .task-action-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    opacity: 0.6;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: 0.15s;
+  }
+  .task-action-btn:active {
+    background: var(--pink-soft);
+    transform: scale(0.9);
+  }
+
+  /* ✅ Empty state */
+  .todo-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--pink-dark);
+  }
+  .todo-empty .big {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+  }
+  .todo-empty p {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ✅ Clear All better position */
+  .clear-all-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    margin-bottom: 20px;
+  }
+
+  /* ✅ Edit modal */
+  .edit-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .edit-modal-overlay.hidden { display: none !important; }
+  .edit-modal-card {
+    background: var(--card-bg, #fff);
+    color: var(--text, #333);
+    border-radius: 20px;
+    padding: 20px;
+    width: 100%;
+    max-width: 380px;
+  }
+  .edit-modal-card h3 {
+    color: var(--pink-main);
+    font-size: 16px;
+    margin-bottom: 14px;
+  }
+  .edit-modal-card input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--pink-soft);
+    background: var(--pink-light);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    outline: none;
+  }
+  .edit-modal-card input:focus {
+    border-color: var(--pink-main);
+  }
+  .edit-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .edit-modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .edit-modal-actions .btn-cancel {
+    background: var(--pink-soft);
+    color: var(--pink-main);
+  }
+  .edit-modal-actions .btn-save {
+    background: var(--pink-main);
+    color: #fff;
+  }
+
+  body.dark .edit-modal-card { background: #2f2329; }
+  body.dark .edit-modal-card input { background: #3a2a33; border-color: #4a3340; color: #eee; }
+  body.blue .edit-modal-card { background: #1e293b; }
+  body.blue .edit-modal-card input { background: #334155; border-color: #475569; color: #e2e8f0; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">টুডু লিস্ট 📝</h1>
+      <div class="date" id="pageSubtitle">আগামীর কাজের তালিকা</div>
+    </div>
+  </div>
+
+  <div class="write-card" style="padding: 16px;">
+    <input type="text" id="taskInput" class="settings-input" placeholder="নতুন কাজ লিখো..." style="margin-top:0; margin-bottom:10px; width:100%;">
+
+    <div style="display:flex; gap:10px;">
+      <input type="date" id="taskDate" class="settings-input" style="margin-top:0; flex:1;">
+      <button class="save-btn" id="addTaskBtn" type="button" style="width:auto; padding:0 20px; border-radius:14px; font-size:22px;">+</button>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="todo-filters" id="todoFilters">
+    <button class="tf-btn active" data-filter="all" type="button" id="tfAll">সব</button>
+    <button class="tf-btn" data-filter="today" type="button" id="tfToday">🔥 আজকের</button>
+    <button class="tf-btn" data-filter="upcoming" type="button" id="tfUpcoming">📅 আগামী</button>
+    <button class="tf-btn" data-filter="overdue" type="button" id="tfOverdue">⚠️ ওভারডিউ</button>
+    <button class="tf-btn" data-filter="done" type="button" id="tfDone">✅ সম্পন্ন</button>
+  </div>
+
+  <div class="section-title" id="taskListTitle">📌 তোমার কাজের তালিকা</div>
+  <div id="taskList"></div>
+
+  <div class="clear-all-wrap">
+    <button id="clearAllTodosBtn" type="button"
+      style="background:#ffe0e6; color:#d63a5f; border:none; padding:8px 14px; border-radius:10px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer;">
+      🗑️ সব মুছুন
+    </button>
+  </div>
+
+</div>
+
+<!-- Edit modal -->
+<div class="edit-modal-overlay hidden" id="editModal">
+  <div class="edit-modal-card">
+    <h3 id="editModalTitle">কাজ এডিট করো</h3>
+    <input type="text" id="editTaskText" placeholder="কাজের নাম">
+    <input type="date" id="editTaskDate">
+    <div class="edit-modal-actions">
+      <button class="btn-cancel" id="editCancelBtn" type="button">বাতিল</button>
+      <button class="btn-save" id="editSaveBtn" type="button">সেভ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const TODO_KEY = 'pinkDiaryTodos';
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function getTodayStr() {
+    // ✅ প্রতিবার fresh (midnight পার হলে সঠিক "today")
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function getTasks() {
+    try {
+      const raw = localStorage.getItem(TODO_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveTasks(tasks) {
+    try {
+      localStorage.setItem(TODO_KEY, JSON.stringify(tasks));
+      return true;
+    } catch (e) {
+      console.error('Save tasks failed:', e);
+      return false;
+    }
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  let currentFilter = 'all';
+  let editingTaskId = null;
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('pageTitle', window.Lang.todoTitle());
+    setText('pageSubtitle', window.Lang.todoSubtitle());
+    setText('taskListTitle', window.Lang.todoListTitle());
+    setText('clearAllTodosBtn', window.Lang.todoClearAll());
+
+    const taskInput = document.getElementById('taskInput');
+    if (taskInput) taskInput.placeholder = window.Lang.todoPlaceholder();
+
+    // Filter labels
+    setText('tfAll', isEn() ? 'All' : 'সব');
+    setText('tfToday', isEn() ? '🔥 Today' : '🔥 আজকের');
+    setText('tfUpcoming', isEn() ? '📅 Upcoming' : '📅 আগামী');
+    setText('tfOverdue', isEn() ? '⚠️ Overdue' : '⚠️ ওভারডিউ');
+    setText('tfDone', isEn() ? '✅ Done' : '✅ সম্পন্ন');
+
+    // Edit modal
+    setText('editModalTitle', isEn() ? 'Edit Task' : 'কাজ এডিট করো');
+    setText('editCancelBtn', isEn() ? 'Cancel' : 'বাতিল');
+    setText('editSaveBtn', isEn() ? 'Save' : 'সেভ');
+
+    document.title = window.Lang.todoTitle();
+  }
+
+  // ============================================================
+  // Filter logic
+  // ============================================================
+  function filterTasks(tasks) {
+    const today = getTodayStr();
+    switch (currentFilter) {
+      case 'today':
+        return tasks.filter(t => t.date === today && !t.done);
+      case 'upcoming':
+        return tasks.filter(t => t.date > today && !t.done);
+      case 'overdue':
+        return tasks.filter(t => t.date < today && !t.done);
+      case 'done':
+        return tasks.filter(t => t.done);
+      case 'all':
+      default:
+        return tasks;
+    }
+  }
+
+  // ============================================================
+  // Render
+  // ============================================================
+  function renderTasks() {
+    const list = document.getElementById('taskList');
+    if (!list) return;
+
+    const allTasks = getTasks();
+    const tasks = filterTasks(allTasks);
+    const todayStr = getTodayStr();
+    const en = isEn();
+
+    if (tasks.length === 0) {
+      let emptyMsg;
+      if (currentFilter === 'all') {
+        emptyMsg = window.Lang ? window.Lang.emptyTodo() :
+          (en ? 'No tasks yet ☕<br>Write down your plans!' : 'এখনো কোনো কাজ যোগ করা হয়নি ☕<br>ভাবনার কাজগুলো লিখে রাখো!');
+      } else if (currentFilter === 'done') {
+        emptyMsg = en ? 'No completed tasks yet' : 'এখনো কোনো সম্পন্ন কাজ নেই';
+      } else if (currentFilter === 'overdue') {
+        emptyMsg = en ? 'No overdue tasks 🎉' : 'কোনো ওভারডিউ কাজ নেই 🎉';
+      } else if (currentFilter === 'today') {
+        emptyMsg = en ? 'Nothing today 🎉' : 'আজকের কোনো কাজ নেই 🎉';
+      } else {
+        emptyMsg = en ? 'No upcoming tasks' : 'কোনো আগামী কাজ নেই';
+      }
+      list.innerHTML = `<div class="todo-empty"><span class="big">☕</span><p>${emptyMsg}</p></div>`;
+      return;
+    }
+
+    // Sort by date ascending, then by done status
+    tasks.sort((a, b) => {
+      if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
+      return (a.done ? 1 : 0) - (b.done ? 1 : 0);
+    });
+
+    // Group by date
+    const grouped = {};
+    tasks.forEach(t => {
+      if (!grouped[t.date]) grouped[t.date] = [];
+      grouped[t.date].push(t);
+    });
+
+    let html = '';
+    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
+
+    sortedDates.forEach(dateStr => {
+      const d = new Date(dateStr + 'T00:00:00');
+      const dateLabel = d.toLocaleDateString(en ? 'en-US' : 'bn-BD', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
+      const isToday = dateStr === todayStr;
+      const isOverdue = dateStr < todayStr && !grouped[dateStr].every(t => t.done);
+      const headingColor = isToday
+        ? 'var(--pink-main)'
+        : (isOverdue ? '#d63a5f' : 'var(--pink-dark)');
+      const headingPrefix = isToday
+        ? (en ? '🔥 Today' : '🔥 আজকের কাজ')
+        : (isOverdue ? (en ? '⚠️ Overdue' : '⚠️ ওভারডিউ') : '📅 ' + dateLabel);
+
+      html += `<div style="margin: 18px 4px 8px; font-weight: 600; font-size: 14.5px; color: ${headingColor};">
+        ${headingPrefix}
+      </div>`;
+
+      grouped[dateStr].forEach(t => {
+        const isTaskOverdue = !t.done && t.date < todayStr;
+        const doneClass = t.done ? 'done' : '';
+
+        html += `
+          <div class="entry task-entry" data-task-id="${escapeHtml(t.id)}">
+            <div class="task-check ${doneClass}">
+              ${t.done ? '<span style="color:white; font-size:14px;">✓</span>' : ''}
+            </div>
+            <div class="task-content">
+              <div class="task-text ${doneClass}">${escapeHtml(t.text)}</div>
+              ${isTaskOverdue ? `<span class="task-overdue-badge">${en ? 'Overdue' : 'ওভারডিউ'}</span>` : ''}
+            </div>
+            <div class="task-actions">
+              <button class="task-action-btn" data-action="edit" type="button" title="${en ? 'Edit' : 'এডিট'}">✏️</button>
+              <button class="task-action-btn" data-action="delete" type="button" title="${en ? 'Delete' : 'ডিলিট'}">🗑️</button>
+            </div>
+          </div>
+        `;
+      });
+    });
+
+    list.innerHTML = html;
+
+    // Event listeners
+    list.querySelectorAll('.task-entry').forEach(entry => {
+      const id = entry.dataset.taskId;
+
+      // Row click → toggle
+      entry.addEventListener('click', (e) => {
+        if (e.target.closest('.task-actions')) return;
+        toggleTask(id);
+      });
+
+      // Edit
+      const editBtn = entry.querySelector('[data-action="edit"]');
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openEditModal(id);
+        });
+      }
+
+      // Delete
+      const delBtn = entry.querySelector('[data-action="delete"]');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteTask(id);
+        });
+      }
+    });
+  }
+
+  // ============================================================
+  // Add
+  // ============================================================
+  function addTask() {
+    const input = document.getElementById('taskInput');
+    const dateInput = document.getElementById('taskDate');
+    const text = input.value.trim();
+    const date = dateInput.value;
+    const en = isEn();
+
+    if (!text) {
+      alert(en ? 'Please enter a task name!' : 'কাজের নাম লেখো!');
+      input.focus();
+      return;
+    }
+    if (!date) {
+      alert(en ? 'Please select a date!' : 'তারিখ সিলেক্ট করো!');
+      dateInput.focus();
+      return;
+    }
+
+    const tasks = getTasks();
+    tasks.push({
+      id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 7),
+      text: text,
+      date: date,
+      done: false
+    });
+
+    if (saveTasks(tasks)) {
+      input.value = '';
+      dateInput.value = getTodayStr();
+      renderTasks();
+    }
+  }
+
+  // ============================================================
+  // Toggle
+  // ============================================================
+  function toggleTask(id) {
+    const tasks = getTasks();
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx > -1) {
+      tasks[idx].done = !tasks[idx].done;
+      saveTasks(tasks);
+      renderTasks();
+    }
+  }
+
+  // ============================================================
+  // Delete
+  // ============================================================
+  function deleteTask(id) {
+    const en = isEn();
+    if (!confirm(en ? 'Move this task to recycle bin?' : 'কাজটি রিসাইকেল বিনে পাঠাতে চান?')) return;
+
+    const taskToDelete = getTasks().find(t => t.id === id);
+    if (taskToDelete) {
+      try {
+        let bin = JSON.parse(localStorage.getItem('recycleBin')) || [];
+        if (!Array.isArray(bin)) bin = [];
+        bin.push({
+          id: 'bin_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          type: 'todo',
+          text: taskToDelete.text,
+          data: taskToDelete,
+          deletedAt: Date.now()
+        });
+        localStorage.setItem('recycleBin', JSON.stringify(bin));
+      } catch (e) { console.error(e); }
+    }
+
+    saveTasks(getTasks().filter(t => t.id !== id));
+    renderTasks();
+  }
+
+  // ============================================================
+  // Edit modal
+  // ============================================================
+  function openEditModal(id) {
+    const task = getTasks().find(t => t.id === id);
+    if (!task) return;
+
+    editingTaskId = id;
+    document.getElementById('editTaskText').value = task.text || '';
+    document.getElementById('editTaskDate').value = task.date || getTodayStr();
+    document.getElementById('editModal').classList.remove('hidden');
+
+    setTimeout(() => document.getElementById('editTaskText').focus(), 100);
+  }
+
+  function closeEditModal() {
+    editingTaskId = null;
+    document.getElementById('editModal').classList.add('hidden');
+  }
+
+  document.getElementById('editCancelBtn').addEventListener('click', closeEditModal);
+
+  document.getElementById('editSaveBtn').addEventListener('click', () => {
+    if (!editingTaskId) return;
+    const text = document.getElementById('editTaskText').value.trim();
+    const date = document.getElementById('editTaskDate').value;
+    const en = isEn();
+
+    if (!text) {
+      alert(en ? 'Please enter a task name!' : 'কাজের নাম লেখো!');
+      return;
+    }
+    if (!date) {
+      alert(en ? 'Please select a date!' : 'তারিখ সিলেক্ট করো!');
+      return;
+    }
+
+    const tasks = getTasks();
+    const idx = tasks.findIndex(t => t.id === editingTaskId);
+    if (idx > -1) {
+      tasks[idx].text = text;
+      tasks[idx].date = date;
+      saveTasks(tasks);
+    }
+    closeEditModal();
+    renderTasks();
+  });
+
+  document.getElementById('editModal').addEventListener('click', (e) => {
+    if (e.target.id === 'editModal') closeEditModal();
+  });
+
+  // ============================================================
+  // Clear all
+  // ============================================================
+  document.getElementById('clearAllTodosBtn').addEventListener('click', () => {
+    const en = isEn();
+    if (!confirm(en ? 'Move all todos to recycle bin?' : 'সব টুডু রিসাইকেল বিনে পাঠাতে চান?')) return;
+    if (!confirm(en ? 'Are you absolutely sure?' : 'একদম নিশ্চিত?')) return;
+
+    const tasks = getTasks();
+    try {
+      let bin = JSON.parse(localStorage.getItem('recycleBin')) || [];
+      if (!Array.isArray(bin)) bin = [];
+      tasks.forEach(t => {
+        bin.push({
+          id: 'bin_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          type: 'todo',
+          text: t.text,
+          data: t,
+          deletedAt: Date.now()
+        });
+      });
+      localStorage.setItem('recycleBin', JSON.stringify(bin));
+    } catch (e) { console.error(e); }
+
+    localStorage.removeItem('pinkDiaryTodos');
+    renderTasks();
+    alert(en ? 'All todos moved to recycle bin ✅' : 'সব টুডু রিসাইকেল বিনে পাঠানো হয়েছে ✅');
+  });
+
+  // ============================================================
+  // Filters
+  // ============================================================
+  document.querySelectorAll('.tf-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderTasks();
+    });
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updatePageTexts();
+
+  const taskDate = document.getElementById('taskDate');
+  if (taskDate) taskDate.value = getTodayStr();
+
+  const addBtn = document.getElementById('addTaskBtn');
+  if (addBtn) addBtn.addEventListener('click', addTask);
+
+  const taskInput = document.getElementById('taskInput');
+  if (taskInput) {
+    taskInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTask();
+    });
+  }
+
+  renderTasks();
+
+  // ============================================================
+  // ✅ pageshow → stale data ঠিক
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updatePageTexts();
+      renderTasks();
+    }
+  });
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

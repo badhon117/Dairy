@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>আমার নোট 📝</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  .note-hdr-actions {
+    display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .nh-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 14px; border-radius: 12px; font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--pink-mid, #ffb6c1);
+    background: var(--pink-light);
+    color: var(--pink-main, #e0568a);
+    transition: 0.15s;
+  }
+  .nh-btn:active { transform: scale(0.96); }
+  .nh-btn.primary {
+    background: var(--pink-main, #e0568a); color: #fff;
+    border-color: var(--pink-main, #e0568a);
+  }
+
+  .note-search-wrap { position: relative; margin-bottom: 12px; }
+  .note-search {
+    width: 100%; padding: 12px 14px 12px 42px;
+    border-radius: 14px; border: 1px solid var(--border-color);
+    background: var(--card-bg); font-family: inherit; font-size: 14px;
+    color: var(--text); outline: none;
+    box-shadow: 0 2px 10px var(--card-shadow);
+  }
+  .note-search:focus { border-color: var(--pink-mid); }
+  .note-search-icon {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%); font-size: 16px; opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .note-tabs {
+    display: flex; gap: 6px; margin-bottom: 16px;
+    overflow-x: auto; padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .note-tabs::-webkit-scrollbar { display: none; }
+  .note-tab {
+    padding: 8px 14px; border-radius: 20px;
+    background: var(--card-bg); border: 1px solid var(--border-color);
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    color: var(--pink-dark); white-space: nowrap;
+    cursor: pointer; transition: 0.15s;
+  }
+  .note-tab.active {
+    background: var(--pink-main); color: #fff;
+    border-color: var(--pink-main);
+  }
+
+  .note-count {
+    font-size: 12px;
+    color: var(--pink-dark);
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+
+  .note-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 80px;
+  }
+  @media (max-width: 340px) {
+    .note-grid { grid-template-columns: 1fr; }
+  }
+
+  .note-card {
+    background: var(--card-bg); border-radius: 14px; padding: 12px;
+    border: 1px solid var(--border-color); cursor: pointer;
+    box-shadow: 0 2px 10px var(--card-shadow);
+    transition: 0.15s; position: relative;
+    display: flex; flex-direction: column;
+    min-height: 100px; overflow: hidden;
+    border-top: 4px solid var(--note-color, var(--pink-mid));
+  }
+  .note-card:active { transform: scale(0.97); }
+  .note-card.pinned::before {
+    content: '📌'; position: absolute; top: 6px; right: 8px;
+    font-size: 12px; opacity: 0.85;
+  }
+  .note-card.locked::after {
+    content: '🔒'; position: absolute; top: 6px; right: 8px;
+    font-size: 12px; opacity: 0.85;
+  }
+  .note-card-title {
+    font-size: 13.5px; font-weight: 700; color: var(--text);
+    margin-bottom: 4px; padding-right: 18px;
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    word-break: break-word;
+  }
+  .note-card-preview {
+    font-size: 11.5px; color: var(--pink-dark); line-height: 1.4;
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    word-break: break-word; flex: 1;
+  }
+  .note-card-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px; font-size: 10px; color: var(--pink-mid);
+  }
+  .note-card-tags {
+    display: flex; gap: 3px; flex-wrap: wrap;
+    max-height: 16px; overflow: hidden;
+  }
+  .note-tag-pill {
+    background: rgba(224, 86, 138, 0.12);
+    color: var(--pink-main);
+    padding: 1px 6px; border-radius: 10px; font-size: 9px;
+    font-weight: 600; white-space: nowrap;
+  }
+  body.blue .note-tag-pill {
+    background: rgba(96, 165, 250, 0.15);
+    color: #60a5fa;
+  }
+
+  .note-checklist-preview {
+    font-size: 11px; color: var(--pink-dark); line-height: 1.5;
+  }
+  .note-checklist-preview .chk-done {
+    text-decoration: line-through; opacity: 0.6;
+  }
+
+  .note-empty {
+    text-align: center; padding: 60px 20px; color: var(--pink-dark);
+    grid-column: 1 / -1;
+  }
+  .note-empty .big { font-size: 56px; display: block; margin-bottom: 12px; }
+
+  .note-fab {
+    position: fixed; bottom: 24px; right: 24px;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink-mid), var(--pink-main));
+    color: #fff; border: none; font-size: 30px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    cursor: pointer; z-index: 40;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.15s;
+  }
+  .note-fab:active { transform: scale(0.92); }
+
+  .ne-modal-overlay {
+    position: fixed; inset: 0; background: var(--overlay-bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .ne-modal-overlay.hidden { display: none !important; }
+  .ne-modal-card {
+    background: var(--card-bg); color: var(--text);
+    border-radius: 20px; padding: 20px;
+    width: 100%; max-width: 340px; max-height: 80vh;
+    overflow-y: auto;
+  }
+  .ne-modal-card h3 {
+    font-size: 16px; color: var(--pink-main);
+    margin-bottom: 14px; font-weight: 700;
+  }
+  .ne-tag-list {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .ne-tag-item {
+    background: var(--pink-soft); color: var(--pink-main);
+    padding: 5px 10px; border-radius: 20px; font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ne-tag-item.active {
+    background: var(--pink-main); color: #fff;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">আমার নোট 📝</h1>
+      <div class="date" id="pageSubtitle">তোমার সব নোট এক জায়গায়</div>
+    </div>
+  </div>
+
+  <div class="note-hdr-actions">
+    <button class="nh-btn primary" id="newNoteBtn" type="button">+ নতুন নোট</button>
+    <button class="nh-btn" id="tagFilterBtn" type="button">🏷️ ট্যাগ</button>
+  </div>
+
+  <div class="note-search-wrap">
+    <span class="note-search-icon">🔍</span>
+    <input type="text" class="note-search" id="noteSearch" placeholder="নোট খুঁজুন...">
+  </div>
+
+  <div class="note-tabs" id="noteTabs">
+    <button class="note-tab active" data-filter="all" type="button">সব</button>
+    <button class="note-tab" data-filter="pinned" type="button">📌 পিন করা</button>
+    <button class="note-tab" data-filter="text" type="button">📄 টেক্সট</button>
+    <button class="note-tab" data-filter="checklist" type="button">✅ চেকলিস্ট</button>
+    <button class="note-tab" data-filter="locked" type="button">🔒 লক করা</button>
+  </div>
+
+  <div class="note-count" id="noteCount"></div>
+
+  <div class="note-grid" id="noteGrid"></div>
+
+  <button class="note-fab" id="fabNew" type="button" title="নতুন নোট">+</button>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function safeEncode(str) {
+    try {
+      return btoa(unescape(encodeURIComponent(String(str))));
+    } catch (e) {
+      try { return btoa(String(str)); }
+      catch (err) { return String(str); }
+    }
+  }
+
+  // ============================================================
+  // IndexedDB
+  // ============================================================
+  const DB_NAME = 'pinkDiaryNotesDB';
+  const DB_VERSION = 2;
+  const STORE = 'notes';
+  let db = null;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      if (db) return resolve(db);
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(STORE)) {
+          const store = database.createObjectStore(STORE, { keyPath: 'id' });
+          store.createIndex('updatedAt', 'updatedAt');
+          store.createIndex('pinned', 'pinned');
+        }
+      };
+      req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      req.onerror = (e) => {
+        console.error('DB Open Error:', e.target.error);
+        reject(e.target.error);
+      };
+    });
+  }
+
+  async function getAllNotes() {
+    const database = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  let notes = [];
+  let currentFilter = 'all';
+  let currentSearch = '';
+  let currentTagFilter = '';
+  let allTags = [];
+
+  const COLORS = [
+    { key: 'pink', val: '#ffd6e8' },
+    { key: 'lavender', val: '#e8d9ff' },
+    { key: 'mint', val: '#d4f0e0' },
+    { key: 'yellow', val: '#fff4c2' },
+    { key: 'sky', val: '#d4e8ff' },
+    { key: 'peach', val: '#ffe0c2' },
+    { key: 'gray', val: '#e8e8e8' },
+    { key: 'white', val: '#ffffff' }
+  ];
+
+  // ============================================================
+  // Text আপডেট
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('pageTitle', window.Lang.noteTitle());
+    setText('pageSubtitle', window.Lang.noteSubtitle());
+    setText('newNoteBtn', window.Lang.noteNewBtn());
+    setText('tagFilterBtn', window.Lang.noteTagBtn());
+
+    const search = document.getElementById('noteSearch');
+    if (search) search.placeholder = window.Lang.noteSearchPlaceholder();
+
+    const tabs = document.querySelectorAll('.note-tab');
+    const labels = [
+      window.Lang.noteTabAll(),
+      window.Lang.noteTabPinned(),
+      window.Lang.noteTabText(),
+      window.Lang.noteTabChecklist(),
+      window.Lang.noteTabLocked()
+    ];
+    tabs.forEach((t, i) => { if (labels[i]) t.textContent = labels[i]; });
+
+    document.title = window.Lang.noteTitle();
+  }
+
+  // ============================================================
+  // Preview / Time
+  // ============================================================
+  function timeAgo(ts) {
+    if (!ts) return isEn() ? 'just now' : 'এইমাত্র';
+    const diff = (Date.now() - ts) / 1000;
+    if (diff < 60) return isEn() ? 'just now' : 'এইমাত্র';
+    if (diff < 3600) return Math.floor(diff / 60) + (isEn() ? 'm ago' : ' মিনিট আগে');
+    if (diff < 86400) return Math.floor(diff / 3600) + (isEn() ? 'h ago' : ' ঘন্টা আগে');
+    if (diff < 604800) return Math.floor(diff / 86400) + (isEn() ? 'd ago' : ' দিন আগে');
+    const d = new Date(ts);
+    return d.toLocaleDateString(isEn() ? 'en-US' : 'bn-BD', { day: 'numeric', month: 'short' });
+  }
+
+  function getPreviewText(note) {
+    if (note.type === 'checklist') {
+      const items = note.checklist || [];
+      const first3 = items.slice(0, 3).map(i =>
+        `<div class="${i.done ? 'chk-done' : ''}">${i.done ? '☑' : '☐'} ${escapeHtml(i.text || '')}</div>`
+      ).join('');
+      return `<div class="note-checklist-preview">${first3}${items.length > 3 ? `<div>... +${items.length - 3}</div>` : ''}</div>`;
+    }
+    const txt = String(note.text || '');
+    return escapeHtml(txt.substring(0, 120)) + (txt.length > 120 ? '...' : '');
+  }
+
+  // ============================================================
+  // Render
+  // ============================================================
+  function renderNotes() {
+    const grid = document.getElementById('noteGrid');
+    if (!grid) return;
+
+    let filtered = [...notes];
+
+    // Filter
+    if (currentFilter === 'pinned') filtered = filtered.filter(n => n.pinned);
+    else if (currentFilter === 'text') filtered = filtered.filter(n => n.type === 'text');
+    else if (currentFilter === 'checklist') filtered = filtered.filter(n => n.type === 'checklist');
+    else if (currentFilter === 'locked') filtered = filtered.filter(n => n.locked);
+
+    // Tag filter
+    if (currentTagFilter) {
+      filtered = filtered.filter(n => (n.tags || []).includes(currentTagFilter));
+    }
+
+    // Search
+    if (currentSearch) {
+      const q = currentSearch.toLowerCase();
+      filtered = filtered.filter(n => {
+        if ((n.title || '').toLowerCase().includes(q)) return true;
+        if ((n.text || '').toLowerCase().includes(q)) return true;
+        if ((n.tags || []).some(t => t.toLowerCase().includes(q))) return true;
+        if (n.type === 'checklist') {
+          return (n.checklist || []).some(i => (i.text || '').toLowerCase().includes(q));
+        }
+        return false;
+      });
+    }
+
+    // Sort: pinned first, then updatedAt
+    filtered.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    });
+
+    // Count
+    const countEl = document.getElementById('noteCount');
+    if (countEl) {
+      if (currentSearch || currentTagFilter || currentFilter !== 'all') {
+        countEl.textContent = isEn()
+          ? `${filtered.length} of ${notes.length} notes`
+          : `${notes.length}-এর মধ্যে ${filtered.length}টি`;
+      } else {
+        countEl.textContent = isEn()
+          ? `${notes.length} note${notes.length === 1 ? '' : 's'}`
+          : `${notes.length}টি নোট`;
+      }
+    }
+
+    // Empty
+    if (filtered.length === 0) {
+      let emptyMsg;
+      if (notes.length === 0) {
+        emptyMsg = isEn()
+          ? 'No notes yet.<br>Tap + to create one!'
+          : 'এখনো কোনো নোট নেই।<br>+ চেপে নতুন নোট তৈরি করো!';
+      } else if (currentSearch) {
+        emptyMsg = isEn() ? 'No notes match your search' : 'কোনো নোট পাওয়া যায়নি';
+      } else {
+        emptyMsg = isEn() ? 'No notes match this filter' : 'এই ফিল্টারে কোনো নোট নেই';
+      }
+      grid.innerHTML = `<div class="note-empty"><span class="big">📝</span>${emptyMsg}</div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(n => {
+      const colorVal = (COLORS.find(c => c.key === n.color) || COLORS[0]).val;
+      const preview = n.locked
+        ? `<div class="note-card-preview">🔒 ${isEn() ? 'Locked note' : 'লক করা নোট'}</div>`
+        : `<div class="note-card-preview">${getPreviewText(n)}</div>`;
+      const title = n.title || (isEn() ? 'Untitled' : 'নামহীন');
+      const tags = (n.tags || []).slice(0, 2).map(t => `<span class="note-tag-pill">#${escapeHtml(t)}</span>`).join('');
+      const pinnedClass = n.pinned ? 'pinned' : '';
+      const lockedClass = n.locked ? 'locked' : '';
+
+      return `
+        <div class="note-card ${pinnedClass} ${lockedClass}"
+             style="--note-color:${colorVal}"
+             data-note-id="${escapeHtml(n.id)}">
+          <div class="note-card-title">${escapeHtml(title)}</div>
+          ${preview}
+          <div class="note-card-footer">
+            <div class="note-card-tags">${tags}</div>
+            <span>${timeAgo(n.updatedAt)}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Click
+    grid.querySelectorAll('.note-card').forEach(card => {
+      card.addEventListener('click', () => {
+        openNote(card.dataset.noteId);
+      });
+    });
+  }
+
+  // ============================================================
+  // Load
+  // ============================================================
+  async function loadNotes() {
+    try {
+      notes = await getAllNotes();
+      // Collect all tags
+      const tagSet = new Set();
+      notes.forEach(n => (n.tags || []).forEach(t => tagSet.add(t)));
+      allTags = [...tagSet].sort();
+      renderNotes();
+    } catch (e) {
+      console.error('Load notes failed:', e);
+      notes = [];
+      renderNotes();
+    }
+  }
+
+  // ============================================================
+  // Open note
+  // ============================================================
+  function openNote(id) {
+    const n = notes.find(x => String(x.id) === String(id));
+    if (!n) return;
+
+    if (n.locked) {
+      const pin = prompt(isEn() ? 'Enter PIN:' : 'পিন দাও:');
+      if (!pin) return;
+
+      if (safeEncode(pin) !== n.lockPin) {
+        alert(isEn() ? 'Wrong PIN ❌' : 'ভুল পিন ❌');
+        return;
+      }
+    }
+    location.href = 'note-editor.html?id=' + encodeURIComponent(id);
+  }
+
+  function openNewNote() {
+    location.href = 'note-editor.html';
+  }
+
+  // ============================================================
+  // Event bindings
+  // ============================================================
+  document.querySelectorAll('.note-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.note-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentFilter = tab.dataset.filter;
+      renderNotes();
+    });
+  });
+
+  const searchInput = document.getElementById('noteSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      currentSearch = e.target.value;
+      renderNotes();
+    });
+  }
+
+  // ============================================================
+  // Tag filter modal
+  // ============================================================
+  const tagFilterBtn = document.getElementById('tagFilterBtn');
+  if (tagFilterBtn) {
+    tagFilterBtn.addEventListener('click', () => {
+      if (allTags.length === 0) {
+        alert(isEn()
+          ? 'No tags yet. Add tags to your notes first.'
+          : 'এখনো কোনো ট্যাগ নেই। আগে নোটে ট্যাগ যোগ করো।');
+        return;
+      }
+
+      const modal = document.createElement('div');
+      modal.className = 'ne-modal-overlay';
+      modal.innerHTML = `
+        <div class="ne-modal-card">
+          <h3>${isEn() ? '🏷️ Filter by Tag' : '🏷️ ট্যাগ দিয়ে ফিল্টার'}</h3>
+          <div class="ne-tag-list">
+            <span class="ne-tag-item ${currentTagFilter === '' ? 'active' : ''}" data-tag="">${isEn() ? 'All' : 'সব'}</span>
+            ${allTags.map(t => `<span class="ne-tag-item ${currentTagFilter === t ? 'active' : ''}" data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</span>`).join('')}
+          </div>
+          <button class="settings-btn-outline" style="margin-top:12px; width:100%;" data-action="close" type="button">
+            ${isEn() ? 'Close' : 'বন্ধ'}
+          </button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelectorAll('[data-tag]').forEach(el => {
+        el.addEventListener('click', () => {
+          currentTagFilter = el.dataset.tag;
+          modal.remove();
+          renderNotes();
+        });
+      });
+
+      modal.querySelector('[data-action="close"]').addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+    });
+  }
+
+  // ============================================================
+  // New note buttons
+  // ============================================================
+  const newNoteBtn = document.getElementById('newNoteBtn');
+  if (newNoteBtn) newNoteBtn.addEventListener('click', openNewNote);
+
+  const fabNew = document.getElementById('fabNew');
+  if (fabNew) fabNew.addEventListener('click', openNewNote);
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updatePageTexts();
+      loadNotes();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updatePageTexts();
+  loadNotes();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

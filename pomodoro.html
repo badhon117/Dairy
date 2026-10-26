@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>প্রজেক্টস 📁</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; }
+
+  /* ✅ প্রজেক্ট কার্ড */
+  .project-card {
+    background: var(--card-bg); padding: 16px 20px; border-radius: 18px;
+    margin-bottom: 12px; box-shadow: 0 4px 14px var(--card-shadow);
+    cursor: pointer; transition: 0.15s; position: relative;
+    border: 1px solid var(--border-color);
+  }
+  .project-card:active { transform: scale(0.98); }
+  .project-card.selected-card {
+    border: 2px solid var(--pink-main);
+    background: linear-gradient(135deg, var(--card-bg), var(--pink-light));
+  }
+
+  .project-main-content {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .project-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+  .project-name { font-size: 16px; font-weight: 600; color: var(--text); }
+  .project-details { font-size: 12px; color: var(--pink-dark); margin-top: 4px; line-height: 1.5; }
+  
+  /* কার্ডের নিচে ডান কোণায় এডিট, ডিলিট ও স্টার্ট বাটন */
+  .card-footer-actions {
+    display: none; justify-content: flex-end; gap: 8px; align-items: center;
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color);
+  }
+  .project-card.selected-card .card-footer-actions {
+    display: flex;
+  }
+
+  .card-action-btn {
+    padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border-color); background: var(--card-bg);
+    color: var(--text); font-family: inherit; transition: 0.15s;
+  }
+  .card-action-btn.start-btn {
+    background: var(--pink-main); border-color: var(--pink-main); color: #fff;
+  }
+  .card-action-btn.edit-btn {
+    border-color: var(--pink-mid); color: var(--pink-main);
+  }
+  .card-action-btn.delete-btn {
+    background: #fff0f3; border-color: #ffd6e8; color: #d63a5f;
+  }
+  body.dark .card-action-btn.delete-btn { background: #3a1e28; color: #ff8098; }
+
+  .add-project-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 16px; border-radius: 18px;
+    background: var(--pink-light); border: 2px dashed var(--pink-mid);
+    color: var(--pink-main); font-size: 16px; font-weight: 600;
+    font-family: inherit; cursor: pointer; margin-bottom: 24px;
+    transition: 0.2s;
+  }
+  .add-project-btn:active { transform: scale(0.98); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; z-index: 100; backdrop-filter: blur(4px);
+  }
+  .hidden { display: none !important; }
+
+  .modal-box {
+    background: var(--card-bg); color: var(--text); width: 100%; max-width: 420px;
+    max-height: 90vh; overflow-y: auto;
+    border-radius: 24px; padding: 24px; animation: pop 0.2s ease;
+  }
+  @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-box h2 { font-size: 20px; color: var(--pink-main); margin-bottom: 16px; }
+  .modal-box label { font-size: 13px; color: var(--pink-dark); margin-bottom: 6px; display: block; font-weight: 600; margin-top: 14px; }
+  .modal-box label .optional { font-weight: 400; opacity: 0.7; font-size: 11px; }
+  
+  .color-options { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .color-circle { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.15s; }
+  .color-circle.active { border-color: var(--text); transform: scale(1.1); }
+
+  .time-picker-trigger {
+    width: 100%; padding: 12px 16px; background: var(--pink-light);
+    border: 1px solid var(--border-color); border-radius: 12px; font-size: 15px;
+    color: var(--text); text-align: left; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background 0.2s;
+  }
+  .time-picker-trigger:active { background: var(--pink-soft); }
+  .time-picker-trigger .placeholder { color: var(--pink-dark); opacity: 0.6; }
+  .time-picker-trigger .clear-btn {
+    background: #ffe4ec; border: none; border-radius: 50%;
+    width: 22px; height: 22px; cursor: pointer; color: #d63a5f;
+    font-size: 14px; line-height: 1; padding: 0; display: flex;
+    align-items: center; justify-content: center; margin-left: 8px;
+  }
+
+  .duration-auto {
+    width: 100%; padding: 14px 16px;
+    background: var(--pink-light);
+    border: 1px solid var(--border-color); border-radius: 12px;
+    font-size: 18px; font-weight: 700; color: var(--pink-main);
+    text-align: center; margin-top: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .duration-auto .label-small {
+    font-size: 11px; font-weight: 500; color: var(--pink-dark); display: block;
+  }
+  .duration-auto .val { font-size: 20px; }
+  .duration-auto.empty {
+    background: var(--card-bg); border-color: var(--border-color); color: var(--pink-dark); font-weight: 500;
+    font-size: 14px; opacity: 0.7;
+  }
+
+  .picker-modal-box {
+    background: var(--card-bg); color: var(--text); width: 100%; max-width: 320px;
+    border-radius: 20px; padding: 20px; text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border-color);
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+  }
+  .picker-modal-box h3 { margin: 0 0 15px; font-size: 16px; color: var(--pink-dark); transition: color 0.3s; }
+
+  .wheels-container {
+    display: flex; justify-content: center; align-items: center;
+    gap: 15px; height: 180px; position: relative; overflow: hidden;
+  }
+  .wheel-column {
+    flex: 1; height: 100%; overflow-y: scroll;
+    scroll-snap-type: y mandatory; scrollbar-width: none;
+  }
+  .wheel-column::-webkit-scrollbar { display: none; }
+  
+  .wheel-item {
+    height: 60px; line-height: 60px; font-size: 24px; color: var(--pink-mid);
+    scroll-snap-align: center; transition: all 0.2s; user-select: none;
+  }
+  .wheel-item.selected { font-size: 36px; font-weight: bold; color: var(--text); }
+  .picker-separator { font-size: 32px; font-weight: bold; color: var(--text); line-height: 60px; transition: color 0.3s; }
+  .wheel-space { height: 60px; }
+
+  .picker-selection-highlight {
+    position: absolute; top: 60px; left: 0; right: 0; height: 60px;
+    border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+    pointer-events: none; transition: border-color 0.3s;
+  }
+  .picker-labels {
+    display: flex; justify-content: space-around; color: var(--pink-dark);
+    font-size: 12px; margin-bottom: 10px; transition: color 0.3s;
+  }
+  .picker-actions { display: flex; gap: 10px; margin-top: 15px; }
+  .picker-btn {
+    flex: 1; padding: 10px; border-radius: 10px; border: none;
+    font-weight: bold; cursor: pointer; font-family: inherit;
+  }
+  .picker-btn.cancel { background: var(--pink-light); color: var(--pink-dark); transition: background 0.3s, color 0.3s; }
+  .picker-btn.confirm { background: var(--pink-main); color: #ffffff; }
+
+  .validation-msg {
+    font-size: 12px; color: #d63a5f; margin-top: 6px; display: none;
+    padding: 8px 12px; background: #fff0f3; border-radius: 8px;
+  }
+  .validation-msg.show { display: block; }
+  body.dark .validation-msg { background: #3a1e28; color: #ff8098; }
+  body.blue .validation-msg { background: #451a03; color: #f87171; }
+
+  .hint-text {
+    font-size: 11px; color: var(--pink-dark); opacity: 0.8; margin-top: 6px; line-height: 1.5;
+    padding-left: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">আমার প্রজেক্ট 📁[span_0](start_span)[span_0](end_span)</h1>
+      <div class="date" id="pageSubtitle">টাইমার সেট করুন[span_1](start_span)[span_1](end_span)</div>
+    </div>
+  </div>
+
+  <button class="add-project-btn" id="openModalBtn" type="button">+ নতুন প্রজেক্ট তৈরি করুন[span_2](start_span)[span_2](end_span)</button>
+  <div id="projectsList"></div>
+
+  <!-- নতুন/এডিট প্রজেক্ট মোডাল -->
+  <div class="modal-overlay hidden" id="projectModal">
+    <div class="modal-box">
+      <h2 id="modalTitle">নতুন প্রজেক্ট[span_3](start_span)[span_3](end_span)</h2>
+      <input type="hidden" id="editProjectId">
+      
+      <label id="lblProjName">প্রজেক্টের নাম <span class="optional">(ঐচ্ছিক)[span_4](start_span)[span_4](end_span)</span></label>
+      <input type="text" id="projName" placeholder="যেমন: পড়াশোনা, কাজ..." style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--border-color); font-family:inherit; font-size:14px; background:var(--pink-light); color:var(--text); outline:none; margin-top:0;">
+      
+      <label id="lblColor">কালার সিলেক্ট করুন[span_5](start_span)[span_5](end_span)</label>
+      <div class="color-options" id="colorOptions">
+        <div class="color-circle active" style="background:#35bcd6" data-color="#35bcd6"></div>
+        <div class="color-circle" style="background:#ff9800" data-color="#ff9800"></div>
+        <div class="color-circle" style="background:#e0568a" data-color="#e0568a"></div>
+        <div class="color-circle" style="background:#8a6fb0" data-color="#8a6fb0"></div>
+        <div class="color-circle" style="background:#4caf50" data-color="#4caf50"></div>
+      </div>
+
+      <label id="lblFocus">ফোকাস (ঘন্টা : মিনিট : সেকেন্ড)[span_6](start_span)[span_6](end_span)</label>
+      <div class="time-picker-trigger" id="projFocusTrigger">
+        <span id="projFocusDisplay" class="placeholder">সময় সেট করুন[span_7](start_span)[span_7](end_span)</span>
+        <span>⏱️</span>
+      </div>
+
+      <label id="lblShort">শর্ট ব্রেক <span class="optional">(ঐচ্ছিক)[span_8](start_span)[span_8](end_span)</span></label>
+      <div class="time-picker-trigger" id="projShortTrigger">
+        <span id="projShortDisplay" class="placeholder">ব্রেক না চাইলে খালি রাখুন[span_9](start_span)[span_9](end_span)</span>
+        <span style="display:flex; align-items:center; gap:6px;">
+          <button id="clearShortBtn" class="clear-btn hidden" type="button" title="ব্রেক বাদ দিন">✕</button>
+          <span>⏱️</span>
+        </span>
+      </div>
+      <div class="hint-text" id="hintShort">💡 ব্রেক না দিলে ফোকাস শেষে সরাসরি পরের ফোকাস শুরু হবে[span_10](start_span)[span_10](end_span)।</div>
+
+      <label id="lblRounds">কত রাউন্ড?[span_11](start_span)[span_11](end_span)</label>
+      <div class="time-picker-trigger" id="projRoundsTrigger">
+        <span id="projRoundsDisplay" class="placeholder">সংখ্যা সেট করুন[span_12](start_span)[span_12](end_span)</span>
+        <span>🔢</span>
+      </div>
+
+      <label id="lblDuration">মোট ডিউরেশন (স্বয়ংক্রিয়)[span_13](start_span)[span_13](end_span)</label>
+      <div class="duration-auto empty" id="durationDisplay">
+        <span>ফোকাস ও রাউন্ড সেট করুন[span_14](start_span)[span_14](end_span)</span>
+      </div>
+
+      <div class="validation-msg" id="validationMsg"></div>
+
+      <div style="display:flex; gap:10px; margin-top:24px;">
+        <button id="closeModalBtn" type="button" style="flex:1; padding:12px; border-radius:12px; border:1px solid var(--border-color); background:none; cursor:pointer; font-family:inherit; font-size:14px; color:var(--text);">বাতিল[span_15](start_span)[span_15](end_span)</button>
+        <button id="saveProjectBtn" type="button" style="flex:2; padding:12px; border-radius:12px; background:var(--pink-main); color:#fff; border:none; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600;">সেভ করুন[span_16](start_span)[span_16](end_span)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- টাইম পিকার মোডাল -->
+  <div class="modal-overlay hidden" id="timePickerModal">
+    <div class="picker-modal-box">
+      <h3 id="pickerTitle">সময় নির্বাচন করুন[span_17](start_span)[span_17](end_span)</h3>
+      
+      <div class="picker-labels" id="pickerLabels">
+        <span>ঘন্টা[span_18](start_span)[span_18](end_span)</span>
+        <span>মিনিট[span_19](start_span)[span_19](end_span)</span>
+        <span>সেকেন্ড[span_20](start_span)[span_20](end_span)</span>
+      </div>
+
+      <div class="wheels-container">
+        <div class="picker-selection-highlight"></div>
+        
+        <div class="wheel-column" id="wheelHours">
+          <div class="wheel-space"></div>
+          <div class="wheel-space"></div>
+        </div>
+
+        <div class="picker-separator" id="sep1">:</div>
+
+        <div class="wheel-column" id="wheelMinutes">
+          <div class="wheel-space"></div>
+          <div class="wheel-space"></div>
+        </div>
+
+        <div class="picker-separator" id="sep2">:</div>
+
+        <div class="wheel-column" id="wheelSeconds">
+          <div class="wheel-space"></div>
+          <div class="wheel-space"></div>
+        </div>
+      </div>
+
+      <div class="picker-actions">
+        <button class="picker-btn cancel" id="pickerCancelBtn" type="button">বাতিল[span_21](start_span)[span_21](end_span)</button>
+        <button class="picker-btn confirm" id="pickerConfirmBtn" type="button">সেট করুন[span_22](start_span)[span_22](end_span)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // সিকিউরিটি চেক
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') location.href = 'index.html';
+  })();
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function updatePageTexts() {
+    if (!window.Lang) return;
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+    
+    setText('pageTitle', window.Lang.pomoTitle());
+    setText('pageSubtitle', window.Lang.pomoSubtitle());
+    setText('openModalBtn', window.Lang.pomoAddBtn());
+    setText('lblProjName', window.Lang.pomoNameLabel());
+    setText('lblColor', window.Lang.pomoColorLabel());
+    setText('lblFocus', window.Lang.pomoFocusLabel());
+    setText('lblShort', window.Lang.pomoShortLabel());
+    setText('lblRounds', window.Lang.pomoRoundsLabel());
+    setText('lblDuration', window.Lang.pomoDurationLabel());
+    setText('hintShort', window.Lang.pomoHintShort());
+    setText('closeModalBtn', window.Lang.cancelBtn());
+    setText('saveProjectBtn', window.Lang.saveBtn());
+
+    const projNameInput = document.getElementById('projName');
+    if (projNameInput) projNameInput.placeholder = window.Lang.pomoNamePlaceholder();
+
+    const focusDisp = document.getElementById('projFocusDisplay');
+    if (focusDisp && focusDisp.classList.contains('placeholder')) {
+      focusDisp.textContent = window.Lang.pomoFocusPlaceholder();
+    }
+    const shortDisp = document.getElementById('projShortDisplay');
+    if (shortDisp && shortDisp.classList.contains('placeholder')) {
+      shortDisp.textContent = window.Lang.pomoShortPlaceholder();
+    }
+    const roundsDisp = document.getElementById('projRoundsDisplay');
+    if (roundsDisp && roundsDisp.classList.contains('placeholder')) {
+      roundsDisp.textContent = window.Lang.pomoRoundsPlaceholder();
+    }
+    const durDisp = document.getElementById('durationDisplay');
+    if (durDisp && durDisp.classList.contains('empty')) {
+      durDisp.innerHTML = `<span>${window.Lang.pomoDurationPlaceholder()}</span>`;
+    }
+
+    const pickerTitle = document.getElementById('pickerTitle');
+    const pickerCancel = document.getElementById('pickerCancelBtn');
+    const pickerConfirm = document.getElementById('pickerConfirmBtn');
+    if (pickerTitle) pickerTitle.textContent = window.Lang.pomoPickerTitle();
+    if (pickerCancel) pickerCancel.textContent = window.Lang.cancelBtn();
+    if (pickerConfirm) pickerConfirm.textContent = window.Lang.pomoSetBtn();
+  }
+
+  updatePageTexts();
+
+  // স্টেট
+  let projects = [];
+  try { projects = JSON.parse(localStorage.getItem('pomoProjects')) || []; }
+  catch (e) { projects = []; }
+  if (!Array.isArray(projects)) projects = [];
+
+  let selectedColor = '#35bcd6';
+  let formValues = { projFocus: null, projShort: null, projRounds: null };
+  let currentTargetField = '';
+  let isOnlyNumberMode = false;
+  let selectedProjectId = null;
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function normalizeTime(val) {
+    if (!val) return null;
+    if (typeof val === 'number') return { h: 0, m: Math.floor(val), s: 0 };
+    return { h: val.h || 0, m: val.m || 0, s: val.s || 0 };
+  }
+
+  function timeToSeconds(t) {
+    if (!t) return 0;
+    return (t.h || 0) * 3600 + (t.m || 0) * 60 + (t.s || 0);
+  }
+
+  function secondsToObj(sec) {
+    return {
+      h: Math.floor(sec / 3600),
+      m: Math.floor((sec % 3600) / 60),
+      s: sec % 60
+    };
+  }
+
+  function formatTimeText(obj) {
+    if (!obj) return '0s';
+    let res = [];
+    if (obj.h > 0) res.push(obj.h + 'h');
+    if (obj.m > 0) res.push(obj.m + 'm');
+    if (obj.s > 0 || res.length === 0) res.push(obj.s + 's');
+    return res.join(' ');
+  }
+
+  function formatDurationText(sec) {
+    if (!sec || sec <= 0) return '';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    let parts = [];
+    if (h > 0) parts.push(h + (isEn() ? 'h' : ' ঘন্টা'));
+    if (m > 0) parts.push(m + (isEn() ? 'm' : ' মিনিট'));
+    if (s > 0) parts.push(s + (isEn() ? 's' : ' সেকেন্ড'));
+    return parts.join(' ') || (isEn() ? '0s' : '0 সেকেন্ড');
+  }
+
+  function calcDuration(focus, short, rounds) {
+    if (!focus || !rounds || rounds <= 0) return null;
+    const focusSec = timeToSeconds(focus);
+    if (focusSec <= 0) return null;
+    
+    let shortSec = 0;
+    if (short) shortSec = timeToSeconds(short);
+    
+    return (focusSec * rounds) + (shortSec * Math.max(0, rounds - 1));
+  }
+
+  function getProjectById(id) {
+    return projects.find(x => String(x.id) === String(id));
+  }
+
+  // প্রজেক্ট লিস্ট রেন্ডার
+  function renderProjects() {
+    const list = document.getElementById('projectsList');
+    if (!list) return;
+
+    const en = isEn();
+
+    if (projects.length === 0) {
+      const emptyMsg = en
+        ? 'No projects yet.<br>Click above to create your first project!'
+        : 'এখনো কোনো প্রজেক্ট নেই।<br>উপরে ক্লিক করে প্রথম প্রজেক্টটি বানাও!';
+      list.innerHTML = `<div class="empty" style="text-align:center; padding:40px 20px; color:var(--pink-dark);"><span style="font-size:48px; display:block; margin-bottom:10px;">📁</span>${emptyMsg}</div>`;
+      return;
+    }
+    
+    const reversedProjects = [...projects].reverse();
+
+    list.innerHTML = reversedProjects.map(p => {
+      const dur = calcDuration(p.focus, p.short, p.rounds) || 0;
+      const displayName = p.name && String(p.name).trim()
+        ? escapeHtml(p.name)
+        : (en ? 'Untitled Project' : 'নামহীন প্রজেক্ট');
+      const hasShort = p.short && timeToSeconds(p.short) > 0;
+      const shortTxt = hasShort 
+        ? `${en ? 'Break' : 'ব্রেক'}: ${formatTimeText(p.short)}` 
+        : (en ? 'No break' : 'ব্রেক নেই');
+      
+      const isSelected = String(selectedProjectId) === String(p.id);
+
+      return `
+        <div class="project-card ${isSelected ? 'selected-card' : ''}" data-project-id="${escapeHtml(p.id)}">
+          <div class="project-main-content">
+            <div class="project-dot" style="background:${escapeHtml(p.color || '#35bcd6')}"></div>
+            <div style="min-width:0; flex:1;">
+              <div class="project-name">${displayName}</div>
+              <div class="project-details">${en ? 'Duration' : 'ডিউরেশন'}: ${formatDurationText(dur)} · ${shortTxt}</div>
+            </div>
+            <div style="font-size:12px; color:var(--pink-main); font-weight:600;">
+              ${isSelected ? (en ? '✓ Selected' : '✓ সিলেক্টেড') : (en ? 'Select' : 'সিলেক্ট')}
+            </div>
+          </div>
+          
+          <!-- কার্ডের নিচে ডান কোণায় স্টার্ট, এডিট ও ডিলিট অপশন -->
+          <div class="card-footer-actions">
+            <button class="card-action-btn start-btn" data-action="start" type="button">${en ? '▶️ Start' : '▶️ শুরু করুন'}</button>
+            <button class="card-action-btn edit-btn" data-action="edit" type="button">${en ? '✏️ Edit' : '✏️ এডিট'}</button>
+            <button class="card-action-btn delete-btn" data-action="delete" type="button">${en ? '🗑️ Delete' : '🗑️ ডিলিট'}</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // ইভেন্ট লিসেনার বাইন্ডিং
+    list.querySelectorAll('.project-card').forEach(card => {
+      const id = card.dataset.projectId;
+
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.card-action-btn')) return; // বাটনে ক্লিক করলে কার্ডের সিলেক্ট ট্রিগার হবে না
+
+        if (selectedProjectId === id) {
+          selectedProjectId = null; // ডিসিলেক্ট
+        } else {
+          selectedProjectId = id; // সিলেক্ট
+        }
+        renderProjects();
+      });
+
+      const startBtn = card.querySelector('[data-action="start"]');
+      const editBtn = card.querySelector('[data-action="edit"]');
+      const deleteBtn = card.querySelector('[data-action="delete"]');
+
+      if (startBtn) {
+        startBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startProject(id);
+        });
+      }
+
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editProject(id);
+        });
+      }
+
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteProject(id);
+        });
+      }
+    });
+  }
+
+  function startProject(id) {
+    const p = getProjectById(id);
+    if (!p) return;
+    localStorage.setItem('activeProject', JSON.stringify(p));
+    location.href = 'timer.html';
+  }
+
+  function editProject(id) {
+    const p = getProjectById(id);
+    if (!p) return;
+
+    const en = isEn();
+    const modalTitle = document.getElementById('modalTitle');
+    const editIdInput = document.getElementById('editProjectId');
+    const validationMsg = document.getElementById('validationMsg');
+
+    if (modalTitle) modalTitle.textContent = en ? 'Edit Project' : 'প্রজেক্ট এডিট করুন';
+    if (validationMsg) validationMsg.classList.remove('show');
+
+    document.getElementById('projName').value = p.name || '';
+    
+    formValues.projFocus = normalizeTime(p.focus);
+    formValues.projShort = p.short ? normalizeTime(p.short) : null;
+    formValues.projRounds = typeof p.rounds === 'number' ? p.rounds : (parseInt(p.rounds) || null);
+    
+    updateDisplays();
+    updateDurationDisplay();
+    editIdInput.value = String(p.id);
+
+    document.querySelectorAll('.color-circle').forEach(x => {
+      x.classList.toggle('active', x.dataset.color === p.color);
+    });
+    selectedColor = p.color || '#35bcd6';
+
+    document.getElementById('projectModal').classList.remove('hidden');
+  }
+
+  function deleteProject(id) {
+    const p = getProjectById(id);
+    if (!p) return;
+
+    const en = isEn();
+    const confirmMsg = en ? 'Move this project to recycle bin?' : 'প্রজেক্টটি রিসাইকেল বিনে পাঠাতে চান?';
+    if (!confirm(confirmMsg)) return;
+
+    let bin = [];
+    try {
+      bin = JSON.parse(localStorage.getItem('recycleBin')) || [];
+      if (!Array.isArray(bin)) bin = [];
+    } catch (e) { bin = []; }
+
+    bin.push({
+      id: 'bin_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type: 'project',
+      text: p.name || (en ? 'Untitled Project' : 'নামহীন প্রজেক্ট'),
+      data: p,
+      deletedAt: Date.now()
+    });
+    localStorage.setItem('recycleBin', JSON.stringify(bin));
+
+    projects = projects.filter(x => String(x.id) !== String(id));
+    if (selectedProjectId === id) selectedProjectId = null;
+    localStorage.setItem('pomoProjects', JSON.stringify(projects));
+    renderProjects();
+  }
+
+  function resetForm() {
+    document.getElementById('projName').value = '';
+    formValues = { projFocus: null, projShort: null, projRounds: null };
+    updateDisplays();
+    updateDurationDisplay();
+    document.querySelectorAll('.color-circle').forEach(x => x.classList.remove('active'));
+    const firstColor = document.querySelector('.color-circle');
+    if (firstColor) firstColor.classList.add('active');
+    selectedColor = '#35bcd6';
+    document.getElementById('editProjectId').value = '';
+    document.getElementById('validationMsg').classList.remove('show');
+  }
+
+  document.getElementById('openModalBtn').addEventListener('click', () => {
+    resetForm();
+    document.getElementById('modalTitle').textContent = isEn() ? 'New Project' : 'নতুন প্রজেক্ট';
+    document.getElementById('projectModal').classList.remove('hidden');
+  });
+
+  document.getElementById('closeModalBtn').addEventListener('click', () => {
+    document.getElementById('projectModal').classList.add('hidden');
+  });
+
+  document.querySelectorAll('.color-circle').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.color-circle').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      selectedColor = c.dataset.color;
+    });
+  });
+
+  function updateDisplays() {
+    const en = isEn();
+    const fD = document.getElementById('projFocusDisplay');
+    const sD = document.getElementById('projShortDisplay');
+    const rD = document.getElementById('projRoundsDisplay');
+    const clearBtn = document.getElementById('clearShortBtn');
+    
+    if (formValues.projFocus && timeToSeconds(formValues.projFocus) > 0) {
+      fD.textContent = formatTimeText(formValues.projFocus);
+      fD.classList.remove('placeholder');
+    } else {
+      fD.textContent = en ? 'Set time' : 'সময় সেট করুন';
+      fD.classList.add('placeholder');
+    }
+    
+    if (formValues.projShort && timeToSeconds(formValues.projShort) > 0) {
+      sD.textContent = formatTimeText(formValues.projShort);
+      sD.classList.remove('placeholder');
+      clearBtn.classList.remove('hidden');
+    } else {
+      sD.textContent = en ? 'Leave empty for no break' : 'ব্রেক না চাইলে খালি রাখুন';
+      sD.classList.add('placeholder');
+      clearBtn.classList.add('hidden');
+    }
+    
+    if (formValues.projRounds && formValues.projRounds > 0) {
+      rD.textContent = formValues.projRounds + (en ? ' rounds' : ' রাউন্ড');
+      rD.classList.remove('placeholder');
+    } else {
+      rD.textContent = en ? 'Set number' : 'সংখ্যা সেট করুন';
+      rD.classList.add('placeholder');
+    }
+  }
+
+  function updateDurationDisplay() {
+    const en = isEn();
+    const box = document.getElementById('durationDisplay');
+    if (!box) return;
+    const dur = calcDuration(formValues.projFocus, formValues.projShort, formValues.projRounds);
+    
+    if (!dur) {
+      box.classList.add('empty');
+      box.innerHTML = en ? '<span>Set focus & rounds</span>' : '<span>ফোকাস ও রাউন্ড সেট করুন</span>';
+      return;
+    }
+    
+    box.classList.remove('empty');
+    box.innerHTML = `
+      <div style="text-align:center;">
+        <div class="label-small">${en ? 'Total Duration' : 'মোট ডিউরেশন'}</div>
+        <div class="val">${formatDurationText(dur)}</div>
+      </div>
+    `;
+  }
+
+  document.getElementById('clearShortBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    formValues.projShort = null;
+    updateDisplays();
+    updateDurationDisplay();
+  });
+
+  function populateWheels() {
+    const hCol = document.getElementById('wheelHours');
+    const mCol = document.getElementById('wheelMinutes');
+    const sCol = document.getElementById('wheelSeconds');
+
+    if (hCol) {
+      hCol.innerHTML = '<div class="wheel-space"></div>' + 
+        Array.from({ length: 24 }, (_, i) => `<div class="wheel-item" data-val="${i}">${i}</div>`).join('') + 
+        '<div class="wheel-space"></div>';
+    }
+    if (mCol) {
+      mCol.innerHTML = '<div class="wheel-space"></div>' + 
+        Array.from({ length: 60 }, (_, i) => `<div class="wheel-item" data-val="${i}">${i < 10 ? '0' + i : i}</div>`).join('') + 
+        '<div class="wheel-space"></div>';
+    }
+    if (sCol) {
+      sCol.innerHTML = '<div class="wheel-space"></div>' + 
+        Array.from({ length: 60 }, (_, i) => `<div class="wheel-item" data-val="${i}">${i < 10 ? '0' + i : i}</div>`).join('') + 
+        '<div class="wheel-space"></div>';
+    }
+  }
+  populateWheels();
+
+  ['wheelHours', 'wheelMinutes', 'wheelSeconds'].forEach(colId => {
+    const col = document.getElementById(colId);
+    if (!col) return;
+    col.addEventListener('scroll', () => highlightSelected(colId), { passive: true });
+  });
+
+  function highlightSelected(colId) {
+    const col = document.getElementById(colId);
+    if (!col) return;
+    const index = Math.round(col.scrollTop / 60);
+    const items = col.querySelectorAll('.wheel-item');
+    items.forEach((item, i) => {
+      item.classList.toggle('selected', i === index);
+    });
+  }
+
+  function scrollToVal(colId, val) {
+    const col = document.getElementById(colId);
+    if (!col) return;
+    const items = col.querySelectorAll('.wheel-item');
+    for (let i = 0; i < items.length; i++) {
+      if (parseInt(items[i].dataset.val) === val) {
+        col.scrollTop = i * 60;
+        break;
+      }
+    }
+    setTimeout(() => highlightSelected(colId), 20);
+  }
+
+  function getSelectedVal(colId) {
+    const col = document.getElementById(colId);
+    if (!col) return 0;
+    const index = Math.round(col.scrollTop / 60);
+    const items = col.querySelectorAll('.wheel-item');
+    if (items[index]) return parseInt(items[index].dataset.val);
+    return 0;
+  }
+
+  function openTimePicker(fieldKey) {
+    currentTargetField = fieldKey;
+    isOnlyNumberMode = false;
+
+    document.getElementById('pickerTitle').textContent = window.Lang ? window.Lang.pomoPickerTitle() : 'সময় নির্বাচন করুন';
+    document.getElementById('pickerLabels').innerHTML = isEn()
+      ? '<span>Hour</span><span>Minute</span><span>Second</span>'
+      : '<span>ঘন্টা</span><span>মিনিট</span><span>সেকেন্ড</span>';
+    
+    document.getElementById('wheelHours').style.display = 'block';
+    document.getElementById('sep1').style.display = 'block';
+    document.getElementById('wheelMinutes').style.display = 'block';
+    document.getElementById('sep2').style.display = 'block';
+
+    const currentVal = formValues[fieldKey] || { h: 0, m: 0, s: 0 };
+    
+    document.getElementById('timePickerModal').classList.remove('hidden');
+    
+    setTimeout(() => {
+      scrollToVal('wheelHours', currentVal.h || 0);
+      scrollToVal('wheelMinutes', currentVal.m || 0);
+      scrollToVal('wheelSeconds', currentVal.s || 0);
+    }, 50);
+  }
+
+  function openNumberPicker(fieldKey) {
+    currentTargetField = fieldKey;
+    isOnlyNumberMode = true;
+
+    document.getElementById('pickerTitle').textContent = window.Lang ? window.Lang.pomoPickerRounds() : 'রাউন্ড নির্বাচন করুন';
+    document.getElementById('pickerLabels').innerHTML = isEn() ? '<span>Number</span>' : '<span>সংখ্যা</span>';
+    document.getElementById('wheelHours').style.display = 'none';
+    document.getElementById('sep1').style.display = 'none';
+    document.getElementById('wheelMinutes').style.display = 'none';
+    document.getElementById('sep2').style.display = 'none';
+
+    const currentVal = formValues[fieldKey] || 1;
+    document.getElementById('timePickerModal').classList.remove('hidden');
+    
+    setTimeout(() => {
+      scrollToVal('wheelSeconds', currentVal);
+    }, 50);
+  }
+
+  document.getElementById('projFocusTrigger').addEventListener('click', () => openTimePicker('projFocus'));
+  document.getElementById('projShortTrigger').addEventListener('click', () => openTimePicker('projShort'));
+  document.getElementById('projRoundsTrigger').addEventListener('click', () => openNumberPicker('projRounds'));
+
+  document.getElementById('pickerCancelBtn').addEventListener('click', () => {
+    document.getElementById('timePickerModal').classList.add('hidden');
+  });
+
+  document.getElementById('pickerConfirmBtn').addEventListener('click', () => {
+    if (isOnlyNumberMode) {
+      const num = getSelectedVal('wheelSeconds');
+      formValues[currentTargetField] = num > 0 ? num : null;
+    } else {
+      const h = getSelectedVal('wheelHours');
+      const m = getSelectedVal('wheelMinutes');
+      const s = getSelectedVal('wheelSeconds');
+      if (h === 0 && m === 0 && s === 0) {
+        formValues[currentTargetField] = null;
+      } else {
+        formValues[currentTargetField] = { h, m, s };
+      }
+    }
+    updateDisplays();
+    updateDurationDisplay();
+    document.getElementById('timePickerModal').classList.add('hidden');
+  });
+
+  document.getElementById('saveProjectBtn').addEventListener('click', () => {
+    const name = document.getElementById('projName').value.trim();
+    const validationMsg = document.getElementById('validationMsg');
+
+    const showValidation = (msg) => {
+      validationMsg.textContent = msg;
+      validationMsg.classList.add('show');
+      setTimeout(() => validationMsg.classList.remove('show'), 3500);
+    };
+
+    if (!formValues.projFocus || timeToSeconds(formValues.projFocus) === 0) {
+      return showValidation(isEn() ? 'Set a valid focus time!' : 'সঠিক ফোকাস টাইম সেট করুন!');
+    }
+    if (!formValues.projRounds || formValues.projRounds <= 0) {
+      return showValidation(isEn() ? 'Set a valid round count!' : 'সঠিক রাউন্ড সংখ্যা সেট করুন!');
+    }
+
+    if (formValues.projShort && timeToSeconds(formValues.projShort) === 0) {
+      formValues.projShort = null;
+    }
+
+    const durationSec = calcDuration(formValues.projFocus, formValues.projShort, formValues.projRounds);
+    if (!durationSec, !durationSec) {
+      return showValidation(isEn() ? 'Could not calculate duration!' : 'ডিউরেশন হিসাব করা যায়নি!');
+    }
+
+    const editId = document.getElementById('editProjectId').value;
+
+    const projectData = {
+      id: editId ? String(editId) : Date.now().toString(),
+      name: name,
+      color: selectedColor,
+      duration: secondsToObj(durationSec),
+      focus: formValues.projFocus,
+      short: formValues.projShort,
+      rounds: formValues.projRounds
+    };
+
+    if (editId) {
+      const idx = projects.findIndex(p => String(p.id) === String(editId));
+      if (idx > -1) projects[idx] = projectData;
+      else projects.push(projectData);
+    } else {
+      projects.push(projectData);
+    }
+    
+    localStorage.setItem('pomoProjects', JSON.stringify(projects));
+    document.getElementById('projectModal').classList.add('hidden');
+    renderProjects();
+  });
+
+  renderProjects();
+
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      try {
+        projects = JSON.parse(localStorage.getItem('pomoProjects')) || [];
+        if (!Array.isArray(projects)) projects = [];
+      } catch (err) { projects = []; }
+      renderProjects();
+    }
+  });
+
+})();
+</script>
+
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

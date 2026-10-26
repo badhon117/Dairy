@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>সেটিংস ⚙️</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e0568a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="language.js"></script>
+<style>
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+  .modal-overlay.hidden { display: none !important; }
+  .modal-card {
+    background: var(--card-bg, #fff);
+    color: var(--text-color, #333);
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+  .verify-tab-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--pink-main);
+    background: transparent;
+    color: var(--pink-main);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .verify-tab-btn.active {
+    background: var(--pink-main);
+    color: white;
+  }
+  .theme-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .theme-card {
+    border: 2px solid var(--pink-soft);
+    border-radius: 14px; padding: 12px;
+    cursor: pointer; text-align: center;
+    transition: 0.2s; background: var(--pink-light);
+  }
+  .theme-card.active {
+    border-color: var(--pink-main);
+    box-shadow: 0 0 0 3px rgba(224, 86, 138, 0.2);
+  }
+  .theme-preview {
+    height: 40px; border-radius: 8px; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .theme-preview.light { background: #f8f9fa; border: 1px solid #dee2e6; }
+  .theme-preview.pink { background: #ffe3ee; border: 1px solid #f7b8d2; }
+  .theme-preview.blue { background: #d0e2ff; border: 1px solid #93b8f7; }
+  .theme-preview.dark { background: #2a1f26; border: 1px solid #8a5570; color: #fff; }
+  .theme-card-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .lock-setup-tabs {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }
+  .lock-setup-tabs button {
+    flex: 1; padding: 8px; border-radius: 8px;
+    border: 1px solid var(--pink-main);
+    background: transparent; color: var(--pink-main);
+    cursor: pointer; font-family: inherit; font-size: 13px;
+    font-weight: 600;
+  }
+  .lock-setup-tabs button.active {
+    background: var(--pink-main); color: white;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">সেটিংস ⚙️</h1>
+      <div class="date" id="pageSubtitle">অ্যাপের নিয়ন্ত্রণ</div>
+    </div>
+  </div>
+
+  <!-- পাসওয়ার্ড সেকশন -->
+  <div class="settings-card">
+    <div class="settings-row">
+      <div>
+        <div class="settings-label" id="lockLabel">🔒 পাসওয়ার্ড লক</div>
+        <div class="settings-desc" id="lockStatus">বন্ধ আছে</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="lockToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- লক মেথড সিলেক্টর -->
+    <div id="passwordSetup" class="hidden" style="margin-top:12px;">
+      <div class="lock-setup-tabs">
+        <button type="button" class="active" id="btnSetupPin">পাসওয়ার্ড</button>
+        <button type="button" id="setupPatternBtn">প্যাটার্ন</button>
+      </div>
+
+      <!-- পাসওয়ার্ড সেটআপ ইনপুট -->
+      <div id="pinSetupInputs">
+        <input type="password" id="newPassword" class="settings-input" placeholder="নতুন পাসওয়ার্ড">
+        <input type="password" id="confirmPassword" class="settings-input" placeholder="আবার লিখো">
+        <button class="save-btn" id="savePasswordBtn" type="button" style="margin-top:8px">পাসওয়ার্ড সেভ করো 🔐</button>
+      </div>
+
+      <!-- প্যাটার্ন সেটআপ ক্যানভাস -->
+      <div id="patternSetupInputs" class="hidden" style="text-align:center;">
+        <div style="font-size:13px; color:var(--pink-dark); margin-bottom:8px;" id="lblDrawPattern">নিচে প্যাটার্ন আঁকো:</div>
+        <canvas id="setupPatternCanvas" width="240" height="240"
+          style="background:var(--card-bg, #fff); border-radius:12px; border:2px dashed var(--pink-main); touch-action:none; display:inline-block;"></canvas>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="settings-btn-outline" id="clearSetupPattern" type="button" style="flex:1;">রিসেট</button>
+          <button class="save-btn" id="savePatternBtn" type="button" style="flex:1; margin-top:0;">প্যাটার্ন সেভ করো 🔐</button>
+        </div>
+        <div class="lock-error" id="setupPatternError" style="color:red; font-size:12px; margin-top:4px;"></div>
+      </div>
+
+      <!-- সিকিউরিটি প্রশ্ন -->
+      <div style="margin-top:15px; padding:12px; background:#fff0f6; border-radius:12px; border:1px solid #ffe4ec;">
+        <div style="font-size:12px; color:#a0808f; margin-bottom:8px; font-weight:600;" id="lblSecurityQuestion">
+          🔑 পাসওয়ার্ড ভুলে গেলে উদ্ধারের জন্য (ঐচ্ছিক)
+        </div>
+        <select id="securityQuestion" class="settings-input" style="margin-top:0; margin-bottom:8px; cursor:pointer;">
+          <option value="">একটি প্রশ্ন বেছে নিন...</option>
+          <option value="favColor" id="sqFavColor">আপনার প্রিয় রঙ কী?</option>
+          <option value="firstSchool" id="sqFirstSchool">আপনার প্রথম স্কুলের নাম কী?</option>
+          <option value="favTeacher" id="sqFavTeacher">আপনার প্রিয় শিক্ষকের নাম কী?</option>
+          <option value="childhoodFriend" id="sqChildhoodFriend">আপনার শৈশবের প্রিয় বন্ধুর নাম কী?</option>
+          <option value="favFood" id="sqFavFood">আপনার প্রিয় খাবারের নাম কী?</option>
+          <option value="petName" id="sqPetName">আপনার পোষা প্রাণীর নাম কী?</option>
+        </select>
+        <input type="text" id="securityAnswer" class="settings-input"
+          placeholder="উত্তর লিখো" style="margin-top:0;">
+      </div>
+    </div>
+
+    <div id="passwordChange" class="hidden">
+      <button class="settings-btn-outline" id="changePasswordBtn" type="button" style="margin-top:10px;">
+        🔑 পাসওয়ার্ড বা প্যাটার্ন বদলাও
+      </button>
+    </div>
+  </div>
+
+  <!-- থিম সেকশন -->
+  <div class="settings-card">
+    <div class="settings-label" style="margin-bottom:12px" id="themeLabel">🎨 অ্যাপের থিম</div>
+    <div class="settings-desc" style="margin-bottom:12px" id="themeDesc">তোমার পছন্দের থিম বেছে নাও</div>
+    <div class="theme-grid" id="themeGrid"></div>
+  </div>
+
+  <!-- অ্যাপের ভাষা -->
+  <div class="settings-card">
+    <div class="settings-label" style="margin-bottom:12px" id="langLabel">🌐 অ্যাপের ভাষা</div>
+    <div class="settings-desc" style="margin-bottom:12px" id="langDesc">অ্যাপটি কোন ভাষায় দেখতে চাও?</div>
+    <div class="tone-options" style="grid-template-columns: 1fr 1fr;">
+      <label class="tone-option">
+        <input type="radio" name="appLang" value="bn" checked>
+        <div class="tone-content">
+          <div class="tone-emoji">🇧🇩</div>
+          <div class="tone-name">বাংলা</div>
+          <div class="tone-desc">Bengali</div>
+        </div>
+      </label>
+      <label class="tone-option">
+        <input type="radio" name="appLang" value="en">
+        <div class="tone-content">
+          <div class="tone-emoji">🇬🇧</div>
+          <div class="tone-name">English</div>
+          <div class="tone-desc">ইংরেজি</div>
+        </div>
+      </label>
+    </div>
+  </div>
+  
+  <!-- প্রোফাইল ও ব্যক্তিগতকরণ -->
+  <a href="profile.html" class="settings-card" style="text-decoration:none; display:block; cursor:pointer;">
+    <div class="settings-row">
+      <div>
+        <div class="settings-label" id="profileLabel">👤 প্রোফাইল ও ব্যক্তিগতকরণ</div>
+        <div class="settings-desc" id="profilePreview">নাম, অ্যাভাটার ও ভাষা সেট করো</div>
+      </div>
+      <span style="color:var(--pink-main); font-size:22px; font-weight:700;">›</span>
+    </div>
+  </a>
+  
+  <!-- ডেটা সেকশন -->
+  <div class="settings-card">
+    <div class="settings-label" style="margin-bottom:12px" id="dataLabel">📦 ডেটা</div>
+    <button class="settings-btn-outline" id="exportBtn" type="button">⬇️ ব্যাকআপ ডাউনলোড (Save)</button>
+    <button class="settings-btn-outline" id="importBtn" type="button" style="margin-top:10px">⬆️ ব্যাকআপ আপলোড (Restore)</button>
+    <input type="file" id="importFile" accept=".json" style="display:none;">
+    <button class="settings-btn-outline danger" id="clearBtn" type="button" style="margin-top:10px">🗑️ সব এন্ট্রি মুছে ফেলো</button>
+  </div>
+
+  <!-- তথ্য -->
+  <div class="settings-card">
+    <div class="settings-label" style="margin-bottom:8px" id="aboutLabel">ℹ️ অ্যাপ সম্পর্কে</div>
+    <div class="settings-desc" id="aboutDesc">আমার দিনলিপি 🌸 — সংস্করণ ১.০<br>তোমার সব লেখা সম্পূর্ণ অফলাইনে এই ফোনেই সুরক্ষিত থাকে।</div>
+  </div>
+
+  <div class="home-footer" id="homeFooter">🌸 ভালো থাকো</div>
+
+</div>
+
+<!-- Verify Modal -->
+<div id="verifyModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3 style="margin-bottom:8px;" id="verifyModalTitle">বর্তমান লক কনফার্ম করো 🔐</h3>
+    <div style="font-size:12px; color:#666; margin-bottom:12px;" id="verifyModalSub">চলিয়ে যেতে পাসওয়ার্ড বা প্যাটার্ন দাও</div>
+    
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button type="button" class="verify-tab-btn active" id="vPinTab">পাসওয়ার্ড</button>
+      <button type="button" class="verify-tab-btn" id="vPatternTab">প্যাটার্ন</button>
+    </div>
+
+    <div id="vPinSection">
+      <input type="password" id="vPinInput" class="settings-input" placeholder="বর্তমান পাসওয়ার্ড দাও" style="margin-bottom:8px;">
+      <button class="save-btn" id="vPinSubmitBtn" type="button">কনফার্ম</button>
+    </div>
+
+    <div id="vPatternSection" class="hidden" style="text-align:center;">
+      <canvas id="vPatternCanvas" width="200" height="200"
+        style="background:var(--card-bg, #fff); border-radius:12px; border:2px dashed var(--pink-main); touch-action:none; display:inline-block;"></canvas>
+    </div>
+
+    <div id="verifyError" style="color:red; font-size:12px; margin-top:8px;"></div>
+    <button class="settings-btn-outline" id="vCancelBtn" type="button" style="margin-top:12px; width:100%;">বাতিল</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const isEn = window.Lang ? window.Lang.lang() === 'en' : false;
+
+  // ============================================================
+  // Lock helper (LockSystem থেকে)
+  // ============================================================
+  const LS = {
+    getPassword: () => localStorage.getItem('pinkDiaryPassword') || '',
+    getLockType: () => {
+      if (!localStorage.getItem('pinkDiaryPassword')) return null;
+      const t = localStorage.getItem('pinkDiaryLockType');
+      if (t === 'pin' || t === 'pattern') return t;
+      // fallback guess
+      const pw = localStorage.getItem('pinkDiaryPassword') || '';
+      return /^\d+(,\d+)+$/.test(pw) ? 'pattern' : 'pin';
+    },
+    setPassword: (value, type) => {
+      if (value) {
+        localStorage.setItem('pinkDiaryPassword', value);
+        localStorage.setItem('pinkDiaryLockType', type === 'pattern' ? 'pattern' : 'pin');
+      } else {
+        localStorage.removeItem('pinkDiaryPassword');
+        localStorage.removeItem('pinkDiaryLockType');
+      }
+    }
+  };
+
+  function safeEncode(str) {
+    try { return btoa(unescape(encodeURIComponent(String(str)))); }
+    catch (e) { try { return btoa(String(str)); } catch (err) { return String(str); } }
+  }
+
+  function normalizeAnswer(str) {
+    return String(str || '').trim().toLowerCase();
+  }
+
+  // ============================================================
+  // ভাষা আপডেট
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+    setText('pageTitle', window.Lang.settingsTitle());
+    setText('pageSubtitle', window.Lang.settingsSubtitle());
+    setText('sqFavColor', window.Lang.sqFavColor());
+    setText('sqFirstSchool', window.Lang.sqFirstSchool());
+    setText('sqFavTeacher', window.Lang.sqFavTeacher());
+    setText('sqChildhoodFriend', window.Lang.sqChildhoodFriend());
+    setText('sqFavFood', window.Lang.sqFavFood());
+    setText('sqPetName', window.Lang.sqPetName());
+    setText('lockLabel', window.Lang.settingsLock());
+    setText('btnSetupPin', window.Lang.settingsPasswordBtn());
+    setText('setupPatternBtn', window.Lang.settingsPatternBtn());
+    setText('savePasswordBtn', window.Lang.settingsSavePasswordBtn());
+    setText('lblDrawPattern', window.Lang.settingsDrawPattern());
+    setText('clearSetupPattern', window.Lang.settingsPatternReset());
+    setText('savePatternBtn', window.Lang.settingsSavePatternBtn());
+    setText('lblSecurityQuestion', window.Lang.settingsSecurityQuestion());
+    setText('changePasswordBtn', window.Lang.settingsChangePasswordBtn());
+    setText('themeLabel', window.Lang.settingsTheme());
+    setText('themeDesc', window.Lang.settingsThemeDesc());
+    setText('langLabel', window.Lang.settingsLang());
+    setText('langDesc', window.Lang.settingsLangDesc());
+    setText('profileLabel', window.Lang.settingsProfile());
+    setText('dataLabel', window.Lang.settingsData());
+    setText('exportBtn', window.Lang.settingsExport());
+    setText('importBtn', window.Lang.settingsImport());
+    setText('clearBtn', window.Lang.settingsClear());
+    setText('aboutLabel', window.Lang.settingsAbout());
+    setText('aboutDesc', window.Lang.settingsAboutDesc());
+    setText('homeFooter', window.Lang.settingsFooter());
+    setText('verifyModalTitle', window.Lang.verifyTitle());
+    setText('verifyModalSub', window.Lang.verifySub());
+    setText('vPinTab', window.Lang.verifyPinTab());
+    setText('vPatternTab', window.Lang.verifyPatternTab());
+    setText('vCancelBtn', window.Lang.verifyCancel());
+
+    const newPassInput = document.getElementById('newPassword');
+    if (newPassInput) newPassInput.placeholder = window.Lang.settingsNewPasswordPlaceholder();
+    const confirmPassInput = document.getElementById('confirmPassword');
+    if (confirmPassInput) confirmPassInput.placeholder = window.Lang.settingsConfirmPasswordPlaceholder();
+    const secAnswerInput = document.getElementById('securityAnswer');
+    if (secAnswerInput) secAnswerInput.placeholder = window.Lang.settingsAnswerPlaceholder();
+    const vPinInput = document.getElementById('vPinInput');
+    if (vPinInput) vPinInput.placeholder = window.Lang.verifyPinPlaceholder();
+    const vPinSubmitBtn = document.getElementById('vPinSubmitBtn');
+    if (vPinSubmitBtn) vPinSubmitBtn.textContent = window.Lang.verifyConfirm();
+
+    document.title = window.Lang.settingsTitle();
+  }
+
+  updatePageTexts();
+
+  // ============================================================
+  // Lock UI
+  // ============================================================
+  const lockToggle = document.getElementById('lockToggle');
+  const lockStatus = document.getElementById('lockStatus');
+  const passwordSetup = document.getElementById('passwordSetup');
+  const passwordChange = document.getElementById('passwordChange');
+  const btnSetupPin = document.getElementById('btnSetupPin');
+  const setupPatternBtn = document.getElementById('setupPatternBtn');
+  const pinSetupInputs = document.getElementById('pinSetupInputs');
+  const patternSetupInputs = document.getElementById('patternSetupInputs');
+
+  let tempPatternStr = '';
+
+  btnSetupPin.addEventListener('click', () => {
+    btnSetupPin.classList.add('active');
+    setupPatternBtn.classList.remove('active');
+    pinSetupInputs.classList.remove('hidden');
+    patternSetupInputs.classList.add('hidden');
+  });
+
+  setupPatternBtn.addEventListener('click', () => {
+    setupPatternBtn.classList.add('active');
+    btnSetupPin.classList.remove('active');
+    patternSetupInputs.classList.remove('hidden');
+    pinSetupInputs.classList.add('hidden');
+    initSetupPatternCanvas();
+  });
+
+  function loadSecurityQuestion() {
+    const qKey = localStorage.getItem('pinkDiarySecurityQ');
+    const qSelect = document.getElementById('securityQuestion');
+    if (!qSelect) return;
+    if (qKey) qSelect.value = qKey;
+  }
+
+  function updateLockUI() {
+    const hasPw = !!LS.getPassword();
+    lockToggle.checked = hasPw;
+    lockStatus.textContent = hasPw
+      ? (window.Lang ? window.Lang.settingsLockStatusOn() : 'চালু আছে ✅')
+      : (window.Lang ? window.Lang.settingsLockStatusOff() : 'বন্ধ আছে');
+    passwordSetup.classList.add('hidden');
+    passwordChange.classList.toggle('hidden', !hasPw);
+    loadSecurityQuestion();
+    // reset tabs to password default
+    btnSetupPin.classList.add('active');
+    setupPatternBtn.classList.remove('active');
+    pinSetupInputs.classList.remove('hidden');
+    patternSetupInputs.classList.add('hidden');
+    tempPatternStr = '';
+  }
+
+  // ============================================================
+  // Verify Modal (state)
+  // ============================================================
+  let onVerifySuccessCallback = null;
+  let verifyActiveTab = 'pin';
+
+  function showVerifyModal(onSuccess) {
+    onVerifySuccessCallback = onSuccess;
+    document.getElementById('verifyModal').classList.remove('hidden');
+    document.getElementById('vPinInput').value = '';
+    document.getElementById('verifyError').textContent = '';
+    switchVerifyTab('pin');
+  }
+
+  function hideVerifyModal() {
+    document.getElementById('verifyModal').classList.add('hidden');
+    onVerifySuccessCallback = null;
+  }
+
+  function switchVerifyTab(tab) {
+    verifyActiveTab = tab;
+    if (tab === 'pin') {
+      document.getElementById('vPinTab').classList.add('active');
+      document.getElementById('vPatternTab').classList.remove('active');
+      document.getElementById('vPinSection').classList.remove('hidden');
+      document.getElementById('vPatternSection').classList.add('hidden');
+    } else {
+      document.getElementById('vPatternTab').classList.add('active');
+      document.getElementById('vPinTab').classList.remove('active');
+      document.getElementById('vPatternSection').classList.remove('hidden');
+      document.getElementById('vPinSection').classList.add('hidden');
+      initVerifyPatternCanvas();
+    }
+  }
+
+  document.getElementById('vPinTab').addEventListener('click', () => switchVerifyTab('pin'));
+  document.getElementById('vPatternTab').addEventListener('click', () => switchVerifyTab('pattern'));
+
+  document.getElementById('vPinSubmitBtn').addEventListener('click', () => {
+    const entered = document.getElementById('vPinInput').value;
+    if (entered && entered === LS.getPassword()) {
+      const cb = onVerifySuccessCallback;
+      hideVerifyModal();
+      if (cb) cb();
+    } else {
+      document.getElementById('verifyError').textContent = window.Lang ? window.Lang.verifyWrongPassword() : 'ভুল পাসওয়ার্ড ❌';
+    }
+  });
+
+  document.getElementById('vPinInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('vPinSubmitBtn').click();
+  });
+
+  document.getElementById('vCancelBtn').addEventListener('click', () => {
+    hideVerifyModal();
+    updateLockUI();
+  });
+
+  // ============================================================
+  // Lock Toggle
+  // ============================================================
+  lockToggle.addEventListener('change', () => {
+    const hasPw = !!LS.getPassword();
+    if (lockToggle.checked && !hasPw) {
+      // নতুন লক তৈরি
+      passwordSetup.classList.remove('hidden');
+      passwordChange.classList.add('hidden');
+    } else if (!lockToggle.checked && !hasPw) {
+      passwordSetup.classList.add('hidden');
+    } else if (!lockToggle.checked && hasPw) {
+      // বন্ধ করতে হলে verify
+      showVerifyModal(() => {
+        LS.setPassword('', null);
+        // সিকিউরিটি প্রশ্নও মুছি
+        localStorage.removeItem('pinkDiarySecurityQ');
+        localStorage.removeItem('pinkDiarySecurityA');
+        updateLockUI();
+        alert(window.Lang ? window.Lang.settingsPasswordDisabled() : 'পাসওয়ার্ড লক বন্ধ হয়েছে ✅');
+      });
+    }
+  });
+
+  // ============================================================
+  // Save password
+  // ============================================================
+  document.getElementById('savePasswordBtn').addEventListener('click', () => {
+    const pw1 = document.getElementById('newPassword').value;
+    const pw2 = document.getElementById('confirmPassword').value;
+
+    if (!pw1) {
+      alert(window.Lang ? window.Lang.settingsPasswordEmpty() : 'পাসওয়ার্ড খালি রাখা যাবে না');
+      return;
+    }
+    if (pw1 !== pw2) {
+      alert(window.Lang ? window.Lang.settingsPasswordMismatch() : 'দুইটা পাসওয়ার্ড মিলছে না');
+      return;
+    }
+
+    const qKey = document.getElementById('securityQuestion').value;
+    const aVal = normalizeAnswer(document.getElementById('securityAnswer').value);
+
+    if (qKey && !aVal) {
+      alert(window.Lang ? window.Lang.settingsAnswerRequired() : 'নিরাপত্তা প্রশ্নের উত্তর লিখো!');
+      return;
+    }
+
+    LS.setPassword(pw1, 'pin');
+
+    if (qKey && aVal) {
+      localStorage.setItem('pinkDiarySecurityQ', qKey);
+      localStorage.setItem('pinkDiarySecurityA', safeEncode(aVal));
+    } else {
+      localStorage.removeItem('pinkDiarySecurityQ');
+      localStorage.removeItem('pinkDiarySecurityA');
+    }
+
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('securityQuestion').value = '';
+    document.getElementById('securityAnswer').value = '';
+
+    updateLockUI();
+    alert(window.Lang ? window.Lang.settingsPasswordSet() : 'পাসওয়ার্ড সেট হয়েছে 🔐');
+  });
+
+  // ============================================================
+  // Setup Pattern
+  // ============================================================
+  let setupPatternInitialized = false;
+
+  function initSetupPatternCanvas() {
+    const canvas = document.getElementById('setupPatternCanvas');
+    if (!canvas) return;
+
+    // একবারই bind
+    if (setupPatternInitialized) return;
+    setupPatternInitialized = true;
+
+    const ctx = canvas.getContext('2d');
+    const errorEl = document.getElementById('setupPatternError');
+    const dots = [];
+    const gridSize = 3;
+    const dotGap = 75;
+    const offset = 45;
+    const dotRadius = 8;
+
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        dots.push({ x: offset + j * dotGap, y: offset + i * dotGap, id: i * 3 + j });
+      }
+    }
+
+    let isDrawing = false;
+    let selectedDots = [];
+    let mousePos = { x: 0, y: 0 };
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      dots.forEach(dot => {
+        const isSelected = selectedDots.includes(dot.id);
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+        ctx.fillStyle = isSelected ? '#e0568a' : '#d9a7bd';
+        ctx.fill();
+      });
+      if (selectedDots.length > 0) {
+        ctx.beginPath();
+        selectedDots.forEach((id, index) => {
+          const dot = dots[id];
+          if (index === 0) ctx.moveTo(dot.x, dot.y);
+          else ctx.lineTo(dot.x, dot.y);
+        });
+        if (isDrawing) ctx.lineTo(mousePos.x, mousePos.y);
+        ctx.strokeStyle = '#e0568a';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+    }
+
+    function getDotAt(x, y) {
+      for (let dot of dots) {
+        if (Math.hypot(x - dot.x, y - dot.y) < 25) return dot.id;
+      }
+      return null;
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+
+    function startDraw(e) {
+      e.preventDefault();
+      isDrawing = true;
+      selectedDots = [];
+      mousePos = getPos(e);
+      const id = getDotAt(mousePos.x, mousePos.y);
+      if (id !== null) selectedDots.push(id);
+      draw();
+    }
+
+    function moveDraw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      mousePos = getPos(e);
+      const id = getDotAt(mousePos.x, mousePos.y);
+      if (id !== null && !selectedDots.includes(id)) selectedDots.push(id);
+      draw();
+    }
+
+    function endDraw() {
+      if (!isDrawing) return;
+      isDrawing = false;
+      if (selectedDots.length < 3) {
+        errorEl.textContent = window.Lang ? window.Lang.lockPatternMin3() : 'কমপক্ষে ৩টি ডট কানেক্ট করুন';
+        selectedDots = [];
+        draw();
+      } else {
+        errorEl.textContent = '';
+        tempPatternStr = selectedDots.join(',');
+      }
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+
+    document.getElementById('clearSetupPattern').addEventListener('click', () => {
+      selectedDots = [];
+      tempPatternStr = '';
+      errorEl.textContent = '';
+      draw();
+    });
+
+    draw();
+  }
+
+  document.getElementById('savePatternBtn').addEventListener('click', () => {
+    if (!tempPatternStr) {
+      alert(window.Lang ? window.Lang.settingsDrawPatternFirst() : 'আগে প্যাটার্ন আঁকো!');
+      return;
+    }
+
+    const qKey = document.getElementById('securityQuestion').value;
+    const aVal = normalizeAnswer(document.getElementById('securityAnswer').value);
+
+    if (qKey && !aVal) {
+      alert(window.Lang ? window.Lang.settingsAnswerRequired() : 'নিরাপত্তা প্রশ্নের উত্তর লিখো!');
+      return;
+    }
+
+    LS.setPassword(tempPatternStr, 'pattern');
+
+    if (qKey && aVal) {
+      localStorage.setItem('pinkDiarySecurityQ', qKey);
+      localStorage.setItem('pinkDiarySecurityA', safeEncode(aVal));
+    } else {
+      localStorage.removeItem('pinkDiarySecurityQ');
+      localStorage.removeItem('pinkDiarySecurityA');
+    }
+
+    document.getElementById('securityQuestion').value = '';
+    document.getElementById('securityAnswer').value = '';
+    tempPatternStr = '';
+    updateLockUI();
+    alert(window.Lang ? window.Lang.settingsPatternSet() : 'প্যাটার্ন সেট হয়েছে 🔐');
+  });
+
+  // ============================================================
+  // Change Password
+  // ============================================================
+  document.getElementById('changePasswordBtn').addEventListener('click', () => {
+    showVerifyModal(() => {
+      passwordSetup.classList.remove('hidden');
+      passwordChange.classList.add('hidden');
+    });
+  });
+
+  // ============================================================
+  // Verify Pattern Canvas
+  // ============================================================
+  let verifyPatternInitialized = false;
+
+  function initVerifyPatternCanvas() {
+    const canvas = document.getElementById('vPatternCanvas');
+    if (!canvas) return;
+    if (verifyPatternInitialized) return;
+    verifyPatternInitialized = true;
+
+    const ctx = canvas.getContext('2d');
+    const dots = [];
+    const gridSize = 3;
+    const dotGap = 60;
+    const offset = 40;
+    const dotRadius = 7;
+
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        dots.push({ x: offset + j * dotGap, y: offset + i * dotGap, id: i * 3 + j });
+      }
+    }
+
+    let isDrawing = false;
+    let selectedDots = [];
+    let mousePos = { x: 0, y: 0 };
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      dots.forEach(dot => {
+        const isSelected = selectedDots.includes(dot.id);
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+        ctx.fillStyle = isSelected ? '#e0568a' : '#d9a7bd';
+        ctx.fill();
+      });
+      if (selectedDots.length > 0) {
+        ctx.beginPath();
+        selectedDots.forEach((id, index) => {
+          const dot = dots[id];
+          if (index === 0) ctx.moveTo(dot.x, dot.y);
+          else ctx.lineTo(dot.x, dot.y);
+        });
+        if (isDrawing) ctx.lineTo(mousePos.x, mousePos.y);
+        ctx.strokeStyle = '#e0568a';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+    }
+
+    function getDotAt(x, y) {
+      for (let dot of dots) {
+        if (Math.hypot(x - dot.x, y - dot.y) < 20) return dot.id;
+      }
+      return null;
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+
+    function startDraw(e) {
+      e.preventDefault();
+      isDrawing = true;
+      selectedDots = [];
+      mousePos = getPos(e);
+      const id = getDotAt(mousePos.x, mousePos.y);
+      if (id !== null) selectedDots.push(id);
+      draw();
+    }
+
+    function moveDraw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      mousePos = getPos(e);
+      const id = getDotAt(mousePos.x, mousePos.y);
+      if (id !== null && !selectedDots.includes(id)) selectedDots.push(id);
+      draw();
+    }
+
+    function endDraw() {
+      if (!isDrawing) return;
+      isDrawing = false;
+      const patternStr = selectedDots.join(',');
+      if (patternStr && patternStr === LS.getPassword()) {
+        const cb = onVerifySuccessCallback;
+        hideVerifyModal();
+        if (cb) cb();
+      } else if (selectedDots.length > 0) {
+        document.getElementById('verifyError').textContent = window.Lang ? window.Lang.lockWrongPattern() : 'ভুল প্যাটার্ন ❌';
+        selectedDots = [];
+        draw();
+      }
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+
+    draw();
+  }
+
+  // ============================================================
+  // Themes
+  // ============================================================
+  const THEMES = [
+    { id: 'light', name: isEn ? 'Light' : 'লাইট', icon: '☀️' },
+    { id: 'pink', name: isEn ? 'Pink' : 'পিংক', icon: '🌸' },
+    { id: 'blue', name: isEn ? 'Blue' : 'ব্লু', icon: '🌊' },
+    { id: 'dark', name: isEn ? 'Dark' : 'ডার্ক', icon: '🌙' }
+  ];
+
+  function renderThemeGrid() {
+    const grid = document.getElementById('themeGrid');
+    const currentTheme = localStorage.getItem('diaryTheme') || 'light';
+
+    grid.innerHTML = THEMES.map(t => `
+      <div class="theme-card ${currentTheme === t.id ? 'active' : ''}" data-theme="${t.id}">
+        <div class="theme-preview ${t.id}">${t.icon}</div>
+        <div class="theme-card-name">${t.name}</div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.theme-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const themeId = card.dataset.theme;
+        if (typeof setTheme === 'function') setTheme(themeId);
+        else {
+          document.body.classList.remove('pink', 'light', 'blue', 'dark');
+          document.body.classList.add(themeId);
+          localStorage.setItem('diaryTheme', themeId);
+        }
+        renderThemeGrid();
+      });
+    });
+  }
+
+  renderThemeGrid();
+
+  // ============================================================
+  // Language selector
+  // ============================================================
+  (function initLanguageSelector() {
+    const prof = JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {};
+    const langVal = prof.language || 'bn';
+    const langRadio = document.querySelector(`input[name="appLang"][value="${langVal}"]`);
+    if (langRadio) langRadio.checked = true;
+
+    document.querySelectorAll('input[name="appLang"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const newLang = radio.value;
+        const confirmMsg = window.Lang ? window.Lang.settingsChangeLangConfirm() : 'Changing language will reload the page. Continue?';
+        if (confirm(confirmMsg)) {
+          const updatedProf = JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {};
+          updatedProf.language = newLang;
+          localStorage.setItem('pinkDiaryProfile', JSON.stringify(updatedProf));
+          location.reload();
+        } else {
+          const prev = prof.language || 'bn';
+          const prevRadio = document.querySelector(`input[name="appLang"][value="${prev}"]`);
+          if (prevRadio) prevRadio.checked = true;
+        }
+      });
+    });
+  })();
+
+  // প্রোফাইল প্রিভিউ
+  try {
+    const prof = JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {};
+    const preview = document.getElementById('profilePreview');
+    if (preview) {
+      if (prof.name) {
+        preview.textContent = `${prof.name}${prof.nickname ? ' (' + prof.nickname + ')' : ''}`;
+      } else {
+        preview.textContent = window.Lang ? window.Lang.settingsProfileDesc() : 'নাম, অ্যাভাটার ও ভাষা সেট করো';
+      }
+    }
+  } catch (e) {}
+
+  // ============================================================
+  // Backup/Restore
+  // ============================================================
+  async function getAllNotesFromDB() {
+    return new Promise((resolve) => {
+      try {
+        const req = indexedDB.open('pinkDiaryNotesDB', 2);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('notes')) {
+            const store = database.createObjectStore('notes', { keyPath: 'id' });
+            store.createIndex('updatedAt', 'updatedAt');
+            store.createIndex('pinned', 'pinned');
+          }
+        };
+        req.onsuccess = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('notes')) return resolve([]);
+          const tx = database.transaction('notes', 'readonly');
+          const getReq = tx.objectStore('notes').getAll();
+          getReq.onsuccess = () => resolve(getReq.result || []);
+          getReq.onerror = () => resolve([]);
+        };
+        req.onerror = () => resolve([]);
+      } catch (e) { resolve([]); }
+    });
+  }
+
+  async function putNotesInDB(notesArr) {
+    return new Promise((resolve) => {
+      try {
+        const req = indexedDB.open('pinkDiaryNotesDB', 2);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('notes')) {
+            const store = database.createObjectStore('notes', { keyPath: 'id' });
+            store.createIndex('updatedAt', 'updatedAt');
+            store.createIndex('pinned', 'pinned');
+          }
+        };
+        req.onsuccess = (e) => {
+          const database = e.target.result;
+          const tx = database.transaction('notes', 'readwrite');
+          const store = tx.objectStore('notes');
+          notesArr.forEach(n => { try { store.put(n); } catch (e) {} });
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        };
+        req.onerror = () => resolve(false);
+      } catch (e) { resolve(false); }
+    });
+  }
+
+  document.getElementById('exportBtn').addEventListener('click', async () => {
+    const notesArr = await getAllNotesFromDB();
+
+    const backupData = {
+      appName: 'PinkDiary',
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      data: {
+        pinkDiaryEntries: localStorage.getItem('pinkDiaryEntries'),
+        pinkDiaryTodos: localStorage.getItem('pinkDiaryTodos'),
+        pomoProjects: localStorage.getItem('pomoProjects'),
+        pinkDiaryRoutines: localStorage.getItem('pinkDiaryRoutines'),
+        pinkDiaryProfile: localStorage.getItem('pinkDiaryProfile'),
+        diaryTheme: localStorage.getItem('diaryTheme'),
+        recycleBin: localStorage.getItem('recycleBin'),
+        pinkDiaryNotes: JSON.stringify(notesArr)
+      }
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pink-diary-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+  });
+
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        const confirmMsg = window.Lang ? window.Lang.settingsConfirmRestore() : 'Replace current data with backup?';
+        if (confirm(confirmMsg)) {
+          const d = parsed.data;
+          if (d) {
+            Object.keys(d).forEach(k => {
+              if (k !== 'pinkDiaryNotes' && k !== 'pinkDiaryPassword' && d[k] != null) {
+                localStorage.setItem(k, d[k]);
+              }
+            });
+            if (d.pinkDiaryNotes) {
+              try {
+                const notesArr = JSON.parse(d.pinkDiaryNotes);
+                await putNotesInDB(notesArr);
+              } catch (e) {}
+            }
+            alert(window.Lang ? window.Lang.settingsBackupRestored() : 'Restored successfully ✅');
+            location.reload();
+          }
+        }
+      } catch (err) {
+        alert(window.Lang ? window.Lang.settingsBackupFailed() : 'Invalid file ❌');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // ============================================================
+  // Clear all
+  // ============================================================
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    const msg = window.Lang ? window.Lang.settingsConfirmDeleteAll() : 'Are you sure?';
+    if (!confirm(msg)) return;
+
+    localStorage.removeItem('pinkDiaryEntries');
+    localStorage.removeItem('pinkDiaryTodos');
+    localStorage.removeItem('pomoProjects');
+    localStorage.removeItem('pinkDiaryRoutines');
+    localStorage.removeItem('pinkDiaryProfile');
+    localStorage.removeItem('recycleBin');
+    localStorage.removeItem('musicPlayerState');
+    localStorage.removeItem('pinkDiaryPassword');
+    localStorage.removeItem('pinkDiaryLockType');
+    localStorage.removeItem('pinkDiarySecurityQ');
+    localStorage.removeItem('pinkDiarySecurityA');
+
+    const req = indexedDB.deleteDatabase('pinkDiaryNotesDB');
+    req.onsuccess = () => {
+      alert(window.Lang ? window.Lang.settingsAllDataDeleted() : 'All data deleted!');
+      location.reload();
+    };
+    req.onerror = () => {
+      alert(window.Lang ? window.Lang.settingsDeleteDbFailed() : 'Failed to delete notes DB!');
+    };
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  loadSecurityQuestion();
+  updateLockUI();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

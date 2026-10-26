@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>দিনলিপি 📖</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e0568a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  /* ✅ Search clear বাটন */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 18px;
+  }
+  .search-wrap input {
+    padding-right: 42px;
+  }
+  .search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: var(--pink-soft);
+    color: var(--pink-main);
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+  .search-clear.show { display: flex; }
+  .search-clear:active { transform: translateY(-50%) scale(0.9); }
+
+  /* ✅ Entry-actions সবসময় দেখাবে (mobile-friendly) */
+  .entry-actions {
+    display: flex;
+    gap: 14px;
+    margin-top: 12px;
+    justify-content: flex-end;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+  }
+  .entry-actions button {
+    background: var(--pink-soft);
+    border: none;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: 0.15s;
+  }
+  .entry-actions button:active { transform: scale(0.95); }
+  .edit-btn { color: #8a6fb0; }
+  .del-btn { color: var(--pink-main); }
+
+  /* ✅ Inline error message */
+  .inline-msg {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    display: none;
+    text-align: center;
+    font-weight: 600;
+  }
+  .inline-msg.show { display: block; }
+  .inline-msg.error {
+    background: #ffe0e6;
+    color: #d63a5f;
+  }
+  .inline-msg.success {
+    background: #d4f5e0;
+    color: #28a745;
+  }
+
+  /* ✅ Search results count */
+  .search-info {
+    font-size: 12px;
+    color: var(--pink-dark);
+    text-align: center;
+    margin: 8px 0 12px;
+    display: none;
+    font-weight: 600;
+  }
+  .search-info.show { display: block; }
+
+  /* ✅ Empty search results */
+  .no-search-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: #d9a7bd;
+    font-size: 15px;
+    display: none;
+  }
+  .no-search-results.show { display: block; }
+  .no-search-results .big {
+    font-size: 46px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  /* ✅ Save বাটনে disabled state */
+  .save-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">দিনলিপি 📖</h1>
+      <div class="date" id="todayDate"></div>
+    </div>
+  </div>
+
+  <div class="write-card">
+    <textarea id="entryText" placeholder="আজ কী করলে? মন খুলে লিখে ফেলো..."></textarea>
+    <div class="mood-row" id="moodRow">
+      <span class="mood" data-mood="😊">😊</span>
+      <span class="mood" data-mood="😌">😌</span>
+      <span class="mood" data-mood="🥰">🥰</span>
+      <span class="mood" data-mood="🥴">🥴</span>
+      <span class="mood" data-mood="😐">😐</span>
+      <span class="mood" data-mood="😔">😔</span>
+      <span class="mood" data-mood="🥹">🥹</span>
+      <span class="mood" data-mood="😭">😭</span>
+      <span class="mood" data-mood="😡">😡</span>
+      <span class="mood" data-mood="😴">😴</span>
+    </div>
+    <div class="inline-msg" id="inlineMsg"></div>
+    <button class="save-btn" id="saveBtn">সেভ করো ✨</button>
+  </div>
+
+  <!-- সার্চ বার -->
+  <div class="settings-card" style="padding:12px; margin-bottom:18px;">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" class="settings-input"
+        placeholder="🔍 ডায়েরিতে খুঁজুন..."
+        style="margin-top:0; width:100%; border-radius:12px;">
+      <button class="search-clear" id="searchClear" type="button">✕</button>
+    </div>
+  </div>
+
+  <div class="section-title" id="oldDaysTitle">📖 পুরনো দিনগুলো</div>
+  <div class="search-info" id="searchInfo"></div>
+  <div id="entriesList"></div>
+
+  <div class="no-search-results" id="noSearchResults">
+    <span class="big">🔍</span>
+    <span id="noSearchResultsText">কোনো এন্ট্রি পাওয়া যায়নি</span>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const STORAGE_KEY = 'pinkDiaryEntries';
+  let selectedMood = '';
+  let editingId = null;
+  let searchQuery = '';
+
+  // ============================================================
+  // Utility
+  // ============================================================
+  function getLang() {
+    return window.Lang ? window.Lang.lang() : 'bn';
+  }
+
+  function isEn() {
+    return getLang() === 'en';
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function getEntries() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Load entries failed:', e);
+      return [];
+    }
+  }
+
+  function saveEntries(entries) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      return true;
+    } catch (e) {
+      console.error('Save entries failed:', e);
+      if (e.name === 'QuotaExceededError') {
+        showInlineMsg(
+          isEn() ? 'Storage full! Delete old entries first.' : 'স্টোরেজ পূর্ণ! আগে পুরনো এন্ট্রি ডিলিট করুন।',
+          'error'
+        );
+      } else {
+        showInlineMsg(
+          isEn() ? 'Failed to save. Try again.' : 'সেভ করা যায়নি। আবার চেষ্টা করুন।',
+          'error'
+        );
+      }
+      return false;
+    }
+  }
+
+  function showInlineMsg(msg, type) {
+    const el = document.getElementById('inlineMsg');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'inline-msg show ' + (type || 'error');
+    setTimeout(() => {
+      el.classList.remove('show');
+    }, 3000);
+  }
+
+  // ============================================================
+  // ভাষা / পেজ টেক্সট
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) pageTitle.textContent = window.Lang.diaryTitle();
+
+    // ✅ আজকের তারিখ (dynamic isEn)
+    const today = new Date();
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const todayDate = document.getElementById('todayDate');
+    if (todayDate) {
+      todayDate.textContent = today.toLocaleDateString(isEn() ? 'en-US' : 'bn-BD', dateOptions);
+    }
+
+    const oldDaysTitle = document.getElementById('oldDaysTitle');
+    if (oldDaysTitle) oldDaysTitle.textContent = window.Lang.oldDaysTitle();
+
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.placeholder = window.Lang.diarySearchPlaceholder();
+
+    const entryText = document.getElementById('entryText');
+    if (entryText) entryText.placeholder = window.Lang.diaryPlaceholder();
+
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) saveBtn.textContent = window.Lang.saveBtn();
+
+    const noResultsText = document.getElementById('noSearchResultsText');
+    if (noResultsText) {
+      noResultsText.textContent = isEn() ? 'No entries found' : 'কোনো এন্ট্রি পাওয়া যায়নি';
+    }
+
+    document.title = window.Lang.diaryTitle();
+  }
+
+  // ✅ dynamic language চেক সহ formatDate
+  function formatDate(iso) {
+    try {
+      const d = new Date(iso);
+      const en = isEn();
+      const dateStr = d.toLocaleDateString(en ? 'en-US' : 'bn-BD', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      });
+      const timeStr = d.toLocaleTimeString(en ? 'en-US' : 'bn-BD', {
+        hour: '2-digit', minute: '2-digit'
+      });
+      return dateStr + ' • ' + timeStr;
+    } catch (e) {
+      return String(iso);
+    }
+  }
+
+  // ============================================================
+  // Mood events
+  // ============================================================
+  function bindMoodEvents() {
+    document.querySelectorAll('.mood').forEach(m => {
+      m.addEventListener('click', () => {
+        const val = m.dataset.mood;
+        if (selectedMood === val) {
+          selectedMood = '';
+          m.classList.remove('active');
+        } else {
+          selectedMood = val;
+          document.querySelectorAll('.mood').forEach(x => x.classList.remove('active'));
+          m.classList.add('active');
+        }
+      });
+    });
+  }
+
+  // ============================================================
+  // রেন্ডার
+  // ============================================================
+  function render() {
+    const list = document.getElementById('entriesList');
+    if (!list) return;
+
+    const entries = getEntries().slice().reverse();
+
+    if (entries.length === 0) {
+      const emptyMsg = window.Lang ? window.Lang.emptyDiary() :
+        (isEn() ? 'No entries yet 🌷<br>Write your first thought!' : 'এখনো কিছু লেখা হয়নি 🌷<br>আজকের প্রথম কথাটা লিখে ফেলো!');
+      list.innerHTML = `<div class="empty"><span class="big">🌷</span>${emptyMsg}</div>`;
+      updateSearchInfo(0, 0);
+      return;
+    }
+
+    const en = isEn();
+    const editTxt = en ? '✏️ Edit' : '✏️ এডিট';
+    const delTxt = en ? '🗑️ Delete' : '🗑️ ডিলিট';
+
+    list.innerHTML = entries.map(e => `
+      <div class="entry" data-entry-id="${escapeHtml(e.id)}" data-search-text="${escapeHtml((e.text || '').toLowerCase())}">
+        <div class="entry-top">
+          <div class="entry-date">${formatDate(e.time)}</div>
+          <div class="entry-mood">${e.mood || ''}</div>
+        </div>
+        <div class="entry-text">${escapeHtml(e.text)}</div>
+        <div class="entry-actions">
+          <button class="edit-btn" data-action="edit" type="button">${editTxt}</button>
+          <button class="del-btn" data-action="delete" type="button">${delTxt}</button>
+        </div>
+      </div>
+    `).join('');
+
+    // ✅ ইভেন্ট বাইন্ড
+    list.querySelectorAll('.entry').forEach(entryEl => {
+      const id = entryEl.dataset.entryId;
+
+      entryEl.addEventListener('click', (e) => {
+        if (e.target.closest('.entry-actions')) return;
+        openEntry(id);
+      });
+
+      const editBtn = entryEl.querySelector('[data-action="edit"]');
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editEntry(id);
+        });
+      }
+
+      const delBtn = entryEl.querySelector('[data-action="delete"]');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteEntry(id);
+        });
+      }
+    });
+
+    // ✅ Search filter apply (যদি থাকে)
+    if (searchQuery) {
+      applySearchFilter();
+    }
+  }
+
+  // ============================================================
+  // Search
+  // ============================================================
+  function applySearchFilter() {
+    const query = searchQuery.toLowerCase().trim();
+    const entries = document.querySelectorAll('#entriesList .entry');
+    let visible = 0;
+
+    entries.forEach(entry => {
+      const searchText = entry.dataset.searchText || '';
+      if (!query || searchText.includes(query)) {
+        entry.style.display = '';
+        visible++;
+      } else {
+        entry.style.display = 'none';
+      }
+    });
+
+    updateSearchInfo(visible, entries.length);
+
+    const noResults = document.getElementById('noSearchResults');
+    if (noResults) {
+      noResults.classList.toggle('show', visible === 0 && entries.length > 0);
+    }
+
+    const clearBtn = document.getElementById('searchClear');
+    if (clearBtn) {
+      clearBtn.classList.toggle('show', !!query);
+    }
+  }
+
+  function updateSearchInfo(visible, total) {
+    const el = document.getElementById('searchInfo');
+    if (!el) return;
+    if (!searchQuery.trim()) {
+      el.classList.remove('show');
+      return;
+    }
+    el.textContent = isEn()
+      ? `${visible} of ${total} results`
+      : `${total}-এর মধ্যে ${visible}টি পাওয়া গেছে`;
+    el.classList.add('show');
+  }
+
+  function clearSearch() {
+    const input = document.getElementById('searchInput');
+    if (input) input.value = '';
+    searchQuery = '';
+    applySearchFilter();
+    const noResults = document.getElementById('noSearchResults');
+    if (noResults) noResults.classList.remove('show');
+  }
+
+  // ============================================================
+  // Entry Modal
+  // ============================================================
+  function openEntry(id) {
+    const entry = getEntries().find(e => e.id === id);
+    if (!entry) return;
+
+    const old = document.getElementById('entryModal');
+    if (old) old.remove();
+
+    const en = isEn();
+    const editTxt = en ? '✏️ Edit' : '✏️ এডিট';
+    const delTxt = en ? '🗑️ Delete' : '🗑️ ডিলিট';
+
+    const modal = document.createElement('div');
+    modal.className = 'entry-modal';
+    modal.id = 'entryModal';
+    modal.innerHTML = `
+      <div class="entry-modal-content">
+        <div class="modal-top">
+          <div class="modal-date">${formatDate(entry.time)}</div>
+          <div class="modal-mood">${entry.mood || ''}</div>
+          <button class="modal-close" type="button" data-action="close">✕</button>
+        </div>
+        <div class="modal-text">${escapeHtml(entry.text)}</div>
+        <div class="modal-actions">
+          <button class="modal-edit" type="button" data-action="edit">${editTxt}</button>
+          <button class="modal-del" type="button" data-action="delete">${delTxt}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('[data-action="close"]').addEventListener('click', closeEntry);
+    modal.querySelector('[data-action="edit"]').addEventListener('click', () => {
+      closeEntry();
+      editEntry(id);
+    });
+    modal.querySelector('[data-action="delete"]').addEventListener('click', () => {
+      closeEntry();
+      deleteEntry(id);
+    });
+    modal.addEventListener('click', (ev) => {
+      if (ev.target === modal) closeEntry();
+    });
+  }
+
+  function closeEntry() {
+    const m = document.getElementById('entryModal');
+    if (m) m.remove();
+  }
+
+  // ============================================================
+  // এডিট
+  // ============================================================
+  function editEntry(id) {
+    const entry = getEntries().find(e => e.id === id);
+    if (!entry) return;
+
+    const textarea = document.getElementById('entryText');
+    textarea.value = entry.text || '';
+
+    // ✅ Mood reset করে তারপর সেট
+    selectedMood = entry.mood || '';
+    document.querySelectorAll('.mood').forEach(m => {
+      m.classList.toggle('active', m.dataset.mood === selectedMood);
+    });
+
+    editingId = id;
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) {
+      saveBtn.textContent = window.Lang ? window.Lang.updateBtn() : 'আপডেট করো ✅';
+    }
+
+    // ✅ Scroll to textarea
+    textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      textarea.focus();
+      // কার্সর শেষে
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }, 300);
+  }
+
+  // ============================================================
+  // ডিলিট
+  // ============================================================
+  function deleteEntry(id) {
+    const en = isEn();
+    const confirmMsg = en
+      ? 'Move this entry to recycle bin?'
+      : 'এই এন্ট্রিটা রিসাইকেল বিনে পাঠাতে চান?';
+    if (!confirm(confirmMsg)) return;
+
+    const entryToDelete = getEntries().find(e => e.id === id);
+    if (entryToDelete) {
+      try {
+        let bin = JSON.parse(localStorage.getItem('recycleBin')) || [];
+        if (!Array.isArray(bin)) bin = [];
+        bin.push({
+          id: 'bin_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          type: 'diary',
+          text: (entryToDelete.text || '').substring(0, 50) + ((entryToDelete.text || '').length > 50 ? '...' : ''),
+          data: entryToDelete,
+          deletedAt: Date.now()
+        });
+        localStorage.setItem('recycleBin', JSON.stringify(bin));
+      } catch (e) { console.error('Recycle bin save failed:', e); }
+    }
+
+    const remaining = getEntries().filter(e => e.id !== id);
+    saveEntries(remaining);
+
+    // ✅ Edit mode থাকলে reset
+    if (editingId === id) {
+      editingId = null;
+      const textarea = document.getElementById('entryText');
+      if (textarea) textarea.value = '';
+      selectedMood = '';
+      document.querySelectorAll('.mood').forEach(m => m.classList.remove('active'));
+      const saveBtn = document.getElementById('saveBtn');
+      if (saveBtn) saveBtn.textContent = window.Lang ? window.Lang.saveBtn() : 'সেভ করো ✨';
+    }
+
+    render();
+  }
+
+  // ============================================================
+  // Save
+  // ============================================================
+  function saveCurrentEntry() {
+    const textarea = document.getElementById('entryText');
+    const saveBtn = document.getElementById('saveBtn');
+    if (!textarea || !saveBtn) return;
+
+    const text = textarea.value.trim();
+    const en = isEn();
+
+    if (!text) {
+      showInlineMsg(en ? 'Please write something first 🙂' : 'আগে কিছু লেখো 🙂', 'error');
+      textarea.focus();
+      return;
+    }
+
+    // ✅ double-click guard
+    saveBtn.disabled = true;
+
+    const entries = getEntries();
+
+    if (editingId) {
+      const idx = entries.findIndex(e => e.id === editingId);
+      if (idx > -1) {
+        entries[idx].text = text;
+        entries[idx].mood = selectedMood;
+      } else {
+        // editingId ভুল — নতুন entry হিসেবে save
+        entries.push({
+          id: Date.now().toString(),
+          text,
+          mood: selectedMood,
+          time: new Date().toISOString()
+        });
+      }
+      editingId = null;
+      saveBtn.textContent = window.Lang ? window.Lang.saveBtn() : 'সেভ করো ✨';
+    } else {
+      entries.push({
+        id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 7),
+        text,
+        mood: selectedMood,
+        time: new Date().toISOString()
+      });
+    }
+
+    const ok = saveEntries(entries);
+    if (!ok) {
+      saveBtn.disabled = false;
+      return;
+    }
+
+    // Reset
+    textarea.value = '';
+    selectedMood = '';
+    document.querySelectorAll('.mood').forEach(x => x.classList.remove('active'));
+
+    showInlineMsg(
+      editingId ? '' : (en ? 'Saved ✓' : 'সেভ হয়েছে ✓'),
+      'success'
+    );
+
+    saveBtn.disabled = false;
+    render();
+
+    // ✅ Smooth scroll to top (new entry above)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ============================================================
+  // URL-এ open=ID থাকলে সেই entry খোলো
+  // ============================================================
+  function checkUrlOpen() {
+    const urlParams = new URLSearchParams(location.search);
+    const openId = urlParams.get('open');
+    if (!openId) return;
+
+    setTimeout(() => {
+      if (typeof openEntry === 'function') {
+        openEntry(openId);
+      }
+      try {
+        history.replaceState({}, '', 'diary.html');
+      } catch (e) {
+        // ignore
+      }
+    }, 300);
+  }
+
+  // ============================================================
+  // ইনিশিয়ালাইজ
+  // ============================================================
+  updatePageTexts();
+  bindMoodEvents();
+  render();
+  checkUrlOpen();
+
+  // ✅ URL-এ edit=ID থাকলে সেই entry edit mode-এ খোলো
+function checkUrlEdit() {
+  const urlParams = new URLSearchParams(location.search);
+  const editId = urlParams.get('edit');
+  if (!editId) return;
+
+  setTimeout(() => {
+    if (typeof editEntry === 'function') {
+      editEntry(editId);
+    }
+    try {
+      history.replaceState({}, '', 'diary.html');
+    } catch (e) {
+      // ignore
+    }
+  }, 350);
+}
+checkUrlEdit();
+  
+  // ✅ Save বাটন
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', saveCurrentEntry);
+  }
+
+  // ✅ Search ইভেন্ট
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      applySearchFilter();
+    });
+  }
+
+  const searchClear = document.getElementById('searchClear');
+  if (searchClear) {
+    searchClear.addEventListener('click', clearSearch);
+  }
+
+  // ============================================================
+  // ✅ pageshow → ফিরে এলে রিফ্রেশ (stale data ঠিক)
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      // ভাষা বদলেছে কি না দেখি
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        // ভাষা বদলেছে → পেজ রিলোড
+        location.reload();
+        return;
+      }
+
+      updatePageTexts();
+      render();
+    }
+  });
+
+  // ✅ Textarea auto-save (draft) — optional: back চাপলে alert
+  window.addEventListener('beforeunload', (e) => {
+    const textarea = document.getElementById('entryText');
+    if (textarea && textarea.value.trim() && !editingId) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

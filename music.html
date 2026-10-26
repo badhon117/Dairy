@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>আমার মিউজিক 🎵</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  /* ===== হেডার ও টুলবার ===== */
+  .music-hdr-actions {
+    display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center;
+  }
+  .mh-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 12px; font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--pink-mid, #ffb6c1);
+    background: #fffafc; color: var(--pink-main, #e0568a);
+    transition: 0.15s;
+  }
+  .mh-btn:active { transform: scale(0.96); }
+  .mh-btn.primary {
+    background: var(--pink-main, #e0568a); color: #fff;
+    border-color: var(--pink-main, #e0568a);
+  }
+  .mh-btn.active-mode {
+    background: #e0568a; color: #fff; border-color: #e0568a;
+  }
+  .mh-btn.danger {
+    background: #d63a5f; color: #fff; border-color: #d63a5f;
+  }
+
+  /* সর্ট সিলেক্টর */
+  .sort-select {
+    padding: 8px 10px; border-radius: 12px; border: 1px solid var(--pink-mid, #ffb6c1);
+    background: #fffafc; color: var(--pink-main, #e0568a);
+    font-size: 12px; font-weight: 600; font-family: inherit; outline: none;
+  }
+
+  /* ===== এখন বাজছে কার্ড ===== */
+  .now-playing-card {
+    background: linear-gradient(135deg, #ffe0ec 0%, #ffc8dd 100%);
+    border-radius: 22px; padding: 16px 18px;
+    margin-bottom: 16px; box-shadow: 0 6px 20px rgba(224, 86, 138, 0.18);
+    border: 1px solid rgba(224, 86, 138, 0.15);
+    display: none;
+  }
+  .now-playing-card.show { display: block; }
+  
+  .np-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .np-label {
+    font-size: 10px; font-weight: 700; color: var(--pink-main);
+    letter-spacing: 0.5px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .np-label::before {
+    content: '▶'; font-size: 8px;
+    animation: npPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes npPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+  .np-close {
+    background: rgba(255,255,255,0.9); border: none;
+    width: 28px; height: 28px; border-radius: 50%;
+    cursor: pointer; font-size: 14px; color: var(--pink-main);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10; position: relative; font-weight: bold;
+  }
+
+  .np-song-name {
+    font-size: 16px; font-weight: 700; color: var(--text, #333);
+    margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .np-artist {
+    font-size: 12px; color: var(--pink-dark, #c97a9a); margin-bottom: 12px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .np-progress-wrap { margin-bottom: 10px; }
+  .np-progress {
+    width: 100%; height: 6px; background: rgba(255,255,255,0.5);
+    border-radius: 10px; overflow: hidden; cursor: pointer; position: relative;
+    touch-action: none;
+  }
+  .np-progress-fill {
+    height: 100%; background: linear-gradient(90deg, #e0568a, #f78fb8);
+    border-radius: 10px; width: 0%; transition: width 0.1s linear; pointer-events: none;
+  }
+  .np-time {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--pink-dark); margin-top: 4px; font-weight: 600;
+  }
+
+  .np-controls {
+    display: flex; justify-content: center; align-items: center;
+    gap: 12px; margin-bottom: 8px;
+  }
+  .np-ctrl {
+    background: none; border: none; cursor: pointer;
+    padding: 6px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; transition: 0.15s;
+  }
+  .np-ctrl:active { transform: scale(0.9); }
+  .np-ctrl-small {
+    width: 34px; height: 34px; font-size: 15px; color: var(--pink-main); opacity: 0.6;
+  }
+  .np-ctrl-small.active { opacity: 1; background: rgba(255,255,255,0.6); }
+  .np-ctrl-main {
+    width: 50px; height: 50px; font-size: 22px;
+    background: linear-gradient(135deg, #e0568a, #d94a7e);
+    color: #fff; box-shadow: 0 4px 14px rgba(224, 86, 138, 0.4);
+  }
+  .np-ctrl-next, .np-ctrl-prev {
+    width: 38px; height: 38px; font-size: 18px; color: var(--pink-main);
+  }
+
+  .speed-btn {
+    font-size: 11px; font-weight: 700; color: var(--pink-main);
+    padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,0.6); border: none; cursor: pointer;
+  }
+
+  .np-volume { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .np-volume-icon { font-size: 14px; color: var(--pink-main); }
+  .np-volume-slider {
+    flex: 1; height: 6px; background: rgba(255,255,255,0.6);
+    border-radius: 4px; outline: none; -webkit-appearance: none; appearance: none; cursor: pointer;
+  }
+  .np-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--pink-main); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  /* ===== সার্চ ===== */
+  .music-search-wrap { position: relative; margin-bottom: 12px; }
+  .music-search {
+    width: 100%; padding: 12px 14px 12px 42px; border-radius: 14px;
+    border: 1px solid #ffe4ec; background: #fff; font-family: inherit; font-size: 14px;
+    color: var(--text, #333); outline: none; box-shadow: 0 2px 10px rgba(224, 86, 138, 0.06);
+  }
+  .music-search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 16px; opacity: 0.5; pointer-events: none;
+  }
+
+  /* ===== গানের লিস্ট ===== */
+  .songs-list { margin-bottom: 80px; }
+
+  .song-card {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 8px;
+    border: 1px solid #ffe4ec; box-shadow: 0 2px 10px rgba(224, 86, 138, 0.05);
+    cursor: pointer; transition: 0.15s; position: relative;
+  }
+  .song-card:active { transform: scale(0.98); }
+  .song-card.playing {
+    border-color: var(--pink-main); background: linear-gradient(135deg, #fff5f9, #ffeaf3);
+    box-shadow: 0 4px 14px rgba(224, 86, 138, 0.15);
+  }
+
+  .batch-checkbox {
+    width: 18px; height: 18px; accent-color: var(--pink-main); cursor: pointer; display: none;
+  }
+  .batch-mode .batch-checkbox { display: block; }
+  .batch-mode .song-actions { display: none; }
+
+  .song-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(135deg, #ffe4ec, #ffd6e8);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .song-card.playing .song-icon {
+    background: linear-gradient(135deg, #e0568a, #f78fb8); animation: musicPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes musicPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
+  .song-info { flex: 1; min-width: 0; }
+  .song-name {
+    font-size: 14px; font-weight: 600; color: var(--text, #333);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
+  }
+  .song-card.playing .song-name { color: var(--pink-main); font-weight: 700; }
+  .song-artist { font-size: 11.5px; color: #a0808f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .song-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .fav-btn { background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.4; }
+  .fav-btn.active { opacity: 1; }
+
+  /* ===== ব্যাচ কন্ট্রোল বার ===== */
+  .batch-bar {
+    position: fixed; bottom: 20px; left: 16px; right: 16px;
+    background: var(--pink-main); color: #fff; border-radius: 16px;
+    padding: 12px 20px; display: none; justify-content: space-between; align-items: center;
+    box-shadow: 0 10px 25px rgba(224, 86, 138, 0.4); z-index: 150;
+  }
+  .batch-bar.show { display: flex; }
+
+  /* ===== মোডাল ===== */
+  .music-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px; backdrop-filter: blur(4px);
+  }
+  .music-modal-overlay.hidden { display: none !important; }
+  .music-modal-card {
+    background: var(--card-bg, #fff); color: var(--text, #333);
+    border-radius: 22px; padding: 22px; width: 100%; max-width: 400px;
+  }
+
+  body.dark .now-playing-card { background: linear-gradient(135deg, #3a2a33, #4a3340); border-color: #5a3d4d; }
+  body.dark .np-song-name { color: #f2dfe8; }
+  body.dark .song-card { background: #2f2329; border-color: #4a3340; }
+  body.dark .song-name { color: #f2dfe8; }
+  body.dark .music-search { background: #2f2329; border-color: #4a3340; color: #eee; }
+  body.dark .sort-select { background: #2f2329; border-color: #4a3340; color: #ff9bb6; }
+  body.dark .music-modal-card { background: #2f2329; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">আমার মিউজিক 🎵</h1>
+      <div class="date" id="pageSubtitle">তোমার পছন্দের গান</div>
+    </div>
+  </div>
+
+  <div class="music-hdr-actions">
+    <button class="mh-btn primary" id="addSongBtn">+ যোগ করো</button>
+    <button class="mh-btn" id="shuffleAllBtn">🔀 শাফল</button>
+    <button class="mh-btn" id="selectModeBtn">☑️ সিলেক্ট</button>
+    <select class="sort-select" id="sortSelect">
+      <option value="newest">সর্বশেষ যুক্ত</option>
+      <option value="name">নাম (A-Z)</option>
+      <option value="size">সাইজ অনুযায়ী</option>
+      <option value="fav">পছন্দের গান</option>
+    </select>
+  </div>
+
+  <!-- এখন বাজছে কার্ড -->
+  <div class="now-playing-card" id="nowPlayingCard">
+    <div class="np-top">
+      <div class="np-label">এখন বাজছে</div>
+      <button class="np-close" id="npClose" type="button">✕</button>
+    </div>
+    <div class="np-song-name" id="npSongName">—</div>
+    <div class="np-artist" id="npArtist">—</div>
+
+    <div class="np-progress-wrap">
+      <div class="np-progress" id="npProgress">
+        <div class="np-progress-fill" id="npProgressFill"></div>
+      </div>
+      <div class="np-time">
+        <span id="npCurrentTime">0:00</span>
+        <span id="npDuration">0:00</span>
+      </div>
+    </div>
+
+    <div class="np-controls">
+      <button class="np-ctrl np-ctrl-small" id="npShuffle" type="button">🔀</button>
+      <button class="np-ctrl np-ctrl-prev" id="npPrev" type="button">⏮</button>
+      <button class="np-ctrl np-ctrl-main" id="npPlayPause" type="button">▶</button>
+      <button class="np-ctrl np-ctrl-next" id="npNext" type="button">⏭</button>
+      <button class="np-ctrl np-ctrl-small" id="npRepeat" type="button">🔁</button>
+      <button class="speed-btn" id="speedBtn" type="button">1.0x</button>
+    </div>
+
+    <div class="np-volume">
+      <span class="np-volume-icon">🔊</span>
+      <input type="range" class="np-volume-slider" id="npVolume" min="0" max="1" step="0.01" value="1">
+    </div>
+  </div>
+
+  <!-- সার্চ -->
+  <div class="music-search-wrap">
+    <span class="music-search-icon">🔍</span>
+    <input type="text" class="music-search" id="musicSearch" placeholder="গান খুঁজুন...">
+  </div>
+
+  <!-- গানের লিস্ট -->
+  <div class="songs-list" id="songsList"></div>
+
+</div>
+
+<!-- ব্যাচ ডিলিট বার -->
+<div class="batch-bar" id="batchBar">
+  <span id="batchCount">০ টি নির্বাচিত</span>
+  <div style="display:flex; gap:8px;">
+    <button class="mh-btn" id="selectAllBtn" type="button" style="padding:4px 8px; font-size:11px;">সবগুলো</button>
+    <button class="mh-btn danger" id="deleteSelectedBtn" type="button" style="padding:4px 10px; font-size:11px;">🗑️ মুছে ফেলো</button>
+  </div>
+</div>
+
+<!-- ফাইল আপলোড মোডাল -->
+<div class="music-modal-overlay hidden" id="addSongModal">
+  <div class="music-modal-card">
+    <h3 style="color:var(--pink-main); margin-bottom:12px;">🎵 নতুন গান যোগ করো</h3>
+    <input type="file" id="songFileInput" accept="audio/*" multiple style="display:none;">
+    <button type="button" class="mh-btn primary" id="customFileBtn" style="width:100%; justify-content:center; padding:12px;">📁 ফাইল বেছে নিন</button>
+    <div id="fileInfoText" style="font-size:12px; color:#888; margin-top:8px; text-align:center;"></div>
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="mh-btn" id="cancelUpload" type="button" style="flex:1; justify-content:center;">বাতিল</button>
+      <button class="mh-btn primary" id="confirmUpload" type="button" style="flex:1; justify-content:center;">যোগ করো</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // সিকিউরিটি
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') location.href = 'index.html';
+  })();
+
+  const isEn = window.Lang ? window.Lang.lang() === 'en' : false;
+
+  // ============================================================
+  // IndexedDB
+  // ============================================================
+  const DB_NAME = 'pinkDiaryMusicDB';
+  const DB_VERSION = 1;
+  const STORE = 'songs';
+  let db = null;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      if (db) return resolve(db);
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(STORE)) {
+          database.createObjectStore(STORE, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function getAllSongs() {
+    const database = await openDB();
+    return new Promise((resolve) => {
+      const tx = database.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  }
+
+  async function saveSong(song) {
+    const database = await openDB();
+    return new Promise((resolve) => {
+      const tx = database.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).put(song);
+      req.onsuccess = () => resolve(song);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async function deleteSongDB(id) {
+    const database = await openDB();
+    return new Promise((resolve) => {
+      const tx = database.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+    });
+  }
+
+  // ============================================================
+  // স্টেট
+  // ============================================================
+  let songs = [];
+  let isBatchMode = false;
+  let selectedIds = new Set();
+  let currentSort = 'newest';
+  let currentSearch = '';
+  const speeds = [1.0, 1.25, 1.5, 2.0, 0.75];
+  let currentSpeedIdx = 0;
+
+  let playerState = {
+    currentSongId: null, isPlaying: false, currentTime: 0, duration: 0,
+    shuffle: false, repeat: 'off', volume: 1
+  };
+
+  // ============================================================
+  // player-এ মেসেজ পাঠানো (player-widget.js-এর iframe ব্যবহার)
+  // ============================================================
+  function sendToPlayer(msg) {
+    const frame = document.getElementById('audioFrame');
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage(msg, '*');
+    }
+  }
+
+  function formatTime(sec) {
+    if (!sec || isNaN(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  // ============================================================
+  // গান রেন্ডার
+  // ============================================================
+  function renderSongs() {
+    const list = document.getElementById('songsList');
+    if (!list) return;
+
+    let filtered = [...songs];
+
+    if (currentSearch) {
+      const q = currentSearch.toLowerCase();
+      filtered = filtered.filter(s => (s.name || '').toLowerCase().includes(q));
+    }
+
+    if (currentSort === 'name') {
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (currentSort === 'size') {
+      filtered.sort((a, b) => (b.size || 0) - (a.size || 0));
+    } else if (currentSort === 'fav') {
+      filtered = filtered.filter(s => s.isFav);
+      filtered.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+    } else {
+      filtered.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+    }
+
+    list.className = 'songs-list' + (isBatchMode ? ' batch-mode' : '');
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div style="text-align:center; color:#888; padding:40px;">${isEn ? 'No songs found' : 'কোনো গান পাওয়া যায়নি'}</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(s => {
+      const isPlaying = s.id === playerState.currentSongId && playerState.isPlaying;
+      const isChecked = selectedIds.has(s.id);
+      const sizeMB = ((s.size || 0) / 1024 / 1024).toFixed(1);
+      return `
+        <div class="song-card ${isPlaying ? 'playing' : ''}" data-song-id="${escapeHtml(s.id)}">
+          <input type="checkbox" class="batch-checkbox" ${isChecked ? 'checked' : ''} data-check-id="${escapeHtml(s.id)}">
+          <div class="song-icon">${isPlaying ? '▶️' : '🎵'}</div>
+          <div class="song-info">
+            <div class="song-name">${escapeHtml(s.name || 'Untitled')}</div>
+            <div class="song-artist">${sizeMB} MB</div>
+          </div>
+          <div class="song-actions">
+            <button class="fav-btn ${s.isFav ? 'active' : ''}" data-fav-id="${escapeHtml(s.id)}" type="button">❤️</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // ইভেন্ট বাইন্ড
+    list.querySelectorAll('.song-card').forEach(card => {
+      const id = card.dataset.songId;
+
+      card.addEventListener('click', (e) => {
+        // checkbox বা fav বাটনে ক্লিক হলে কার্ড ইভেন্ট trigger হবে না
+        if (e.target.closest('.batch-checkbox') || e.target.closest('.fav-btn')) return;
+        if (isBatchMode) toggleSelect(id);
+        else playSong(id);
+      });
+
+      const checkbox = card.querySelector('.batch-checkbox');
+      if (checkbox) {
+        checkbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          toggleSelect(id);
+        });
+        checkbox.addEventListener('click', (e) => e.stopPropagation());
+      }
+
+      const favBtn = card.querySelector('.fav-btn');
+      if (favBtn) {
+        favBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleFav(id);
+        });
+      }
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // গান প্লে
+  // ============================================================
+  function playSong(id) {
+    const idx = songs.findIndex(s => String(s.id) === String(id));
+    if (idx < 0) return;
+
+    // নতুন গান সিলেক্ট করলে প্লেয়ার ওপেন হবে
+    const card = document.getElementById('nowPlayingCard');
+    if (card) card.classList.add('show');
+
+    sendToPlayer({ type: 'musicPlay', playlist: songs, currentIndex: idx });
+    renderSongs();
+  }
+
+  // ============================================================
+  // Select/Fav
+  // ============================================================
+  function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    updateBatchCount();
+    renderSongs();
+  }
+
+  async function toggleFav(id) {
+    const song = songs.find(s => String(s.id) === String(id));
+    if (song) {
+      song.isFav = !song.isFav;
+      await saveSong(song);
+      renderSongs();
+    }
+  }
+
+  function updateBatchCount() {
+    const el = document.getElementById('batchCount');
+    if (el) el.textContent = `${selectedIds.size} টি নির্বাচিত`;
+  }
+
+  // ============================================================
+  // Now Playing UI
+  // ============================================================
+  function updateNowPlayingUI() {
+    const card = document.getElementById('nowPlayingCard');
+    if (!card) return;
+
+    if (!playerState.currentSongId) {
+      card.classList.remove('show');
+      return;
+    }
+    const song = songs.find(s => String(s.id) === String(playerState.currentSongId));
+    if (!song) {
+      card.classList.remove('show');
+      return;
+    }
+
+    // যদি গান সিলেক্ট করা থাকে বা গান চলমান থাকে তবে শো করবে
+    if (playerState.isPlaying) {
+      card.classList.add('show');
+    }
+    document.getElementById('npSongName').textContent = song.name || 'Untitled';
+    document.getElementById('npCurrentTime').textContent = formatTime(playerState.currentTime);
+    document.getElementById('npDuration').textContent = formatTime(playerState.duration);
+
+    const pct = playerState.duration > 0
+      ? Math.min(100, (playerState.currentTime / playerState.duration) * 100)
+      : 0;
+    document.getElementById('npProgressFill').style.width = pct + '%';
+    document.getElementById('npPlayPause').textContent = playerState.isPlaying ? '⏸' : '▶';
+  }
+
+  // ============================================================
+  // Progress bar seek
+  // ============================================================
+  const progressBar = document.getElementById('npProgress');
+  let isDraggingProgress = false;
+
+  function seekFromEvent(e) {
+    if (!progressBar || playerState.duration <= 0) return;
+    const rect = progressBar.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let percent = (clientX - rect.left) / rect.width;
+    percent = Math.max(0, Math.min(1, percent));
+    const newTime = percent * playerState.duration;
+    sendToPlayer({ type: 'musicSeek', time: newTime });
+    document.getElementById('npProgressFill').style.width = (percent * 100) + '%';
+    document.getElementById('npCurrentTime').textContent = formatTime(newTime);
+  }
+
+  if (progressBar) {
+    progressBar.addEventListener('mousedown', (e) => {
+      isDraggingProgress = true;
+      seekFromEvent(e);
+    });
+    progressBar.addEventListener('mousemove', (e) => {
+      if (isDraggingProgress) seekFromEvent(e);
+    });
+    window.addEventListener('mouseup', () => { isDraggingProgress = false; });
+
+    progressBar.addEventListener('touchstart', (e) => {
+      isDraggingProgress = true;
+      seekFromEvent(e);
+    }, { passive: true });
+    progressBar.addEventListener('touchmove', (e) => {
+      if (isDraggingProgress) seekFromEvent(e);
+    }, { passive: true });
+    progressBar.addEventListener('touchend', () => { isDraggingProgress = false; });
+
+    progressBar.addEventListener('click', (e) => {
+      if (!isDraggingProgress) seekFromEvent(e);
+    });
+  }
+
+  // ============================================================
+  // State আপডেট
+  // ============================================================
+  window.addEventListener('message', (e) => {
+    const data = e.data;
+    if (!data || data.type !== 'musicStateUpdate') return;
+    playerState = { ...playerState, ...data };
+    updateNowPlayingUI();
+    renderSongs();
+  });
+
+  // ============================================================
+  // বাটন লিসেনার
+  // ============================================================
+  document.getElementById('selectModeBtn').addEventListener('click', () => {
+    isBatchMode = !isBatchMode;
+    selectedIds.clear();
+    document.getElementById('selectModeBtn').classList.toggle('active-mode', isBatchMode);
+    document.getElementById('batchBar').classList.toggle('show', isBatchMode);
+    updateBatchCount();
+    renderSongs();
+  });
+
+  document.getElementById('selectAllBtn').addEventListener('click', () => {
+    const visibleIds = songs.map(s => String(s.id));
+    if (selectedIds.size === visibleIds.length) {
+      selectedIds.clear();
+    } else {
+      visibleIds.forEach(id => selectedIds.add(id));
+    }
+    updateBatchCount();
+    renderSongs();
+  });
+
+  document.getElementById('deleteSelectedBtn').addEventListener('click', async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(isEn ? `${selectedIds.size} song(s) to delete?` : `${selectedIds.size}টি গান ডিলিট করতে চান?`)) return;
+
+    // যদি বর্তমানে বাজতে থাকা গান ডিলিট হয় → পজ করি
+    if (playerState.currentSongId && selectedIds.has(playerState.currentSongId)) {
+      sendToPlayer({ type: 'musicPause' });
+      playerState.isPlaying = false;
+      document.getElementById('nowPlayingCard').classList.remove('show');
+    }
+
+    for (const id of selectedIds) {
+      await deleteSongDB(id);
+    }
+    selectedIds.clear();
+    isBatchMode = false;
+    document.getElementById('batchBar').classList.remove('show');
+    document.getElementById('selectModeBtn').classList.remove('active-mode');
+    await loadSongs();
+  });
+
+  document.getElementById('speedBtn').addEventListener('click', () => {
+    currentSpeedIdx = (currentSpeedIdx + 1) % speeds.length;
+    const speed = speeds[currentSpeedIdx];
+    document.getElementById('speedBtn').textContent = speed.toFixed(2).replace(/\.?0+$/, '') + 'x';
+    sendToPlayer({ type: 'musicSpeed', speed });
+  });
+
+  document.getElementById('npPlayPause').addEventListener('click', () => sendToPlayer({ type: 'musicToggle' }));
+
+  // নেক্সট ও প্রিভিয়াস বিপরীত করা হলো
+  document.getElementById('npNext').addEventListener('click', () => sendToPlayer({ type: 'musicPrev' }));
+  document.getElementById('npPrev').addEventListener('click', () => sendToPlayer({ type: 'musicNext' }));
+
+  // ক্রস বাটনে ক্লিক করলে প্লেয়ার ক্লোজ ও গান বন্ধ হওয়া
+  document.getElementById('npClose').addEventListener('click', () => {
+    sendToPlayer({ type: 'musicPause' });
+    playerState.isPlaying = false;
+    document.getElementById('nowPlayingCard').classList.remove('show');
+    renderSongs();
+  });
+
+  document.getElementById('npVolume').addEventListener('input', (e) => {
+    sendToPlayer({ type: 'musicVolume', volume: parseFloat(e.target.value) });
+  });
+
+  document.getElementById('sortSelect').addEventListener('change', (e) => {
+    currentSort = e.target.value;
+    renderSongs();
+  });
+
+  document.getElementById('musicSearch').addEventListener('input', (e) => {
+    currentSearch = e.target.value;
+    renderSongs();
+  });
+
+  document.getElementById('shuffleAllBtn').addEventListener('click', () => {
+    if (songs.length === 0) return;
+    const randomIdx = Math.floor(Math.random() * songs.length);
+    const card = document.getElementById('nowPlayingCard');
+    if (card) card.classList.add('show');
+    sendToPlayer({ type: 'musicPlay', playlist: songs, currentIndex: randomIdx });
+  });
+
+  // ============================================================
+  // ফাইল আপলোড
+  // ============================================================
+  document.getElementById('customFileBtn').addEventListener('click', () => {
+    document.getElementById('songFileInput').click();
+  });
+
+  document.getElementById('addSongBtn').addEventListener('click', () => {
+    document.getElementById('addSongModal').classList.remove('hidden');
+  });
+
+  document.getElementById('cancelUpload').addEventListener('click', () => {
+    document.getElementById('addSongModal').classList.add('hidden');
+    document.getElementById('songFileInput').value = '';
+    document.getElementById('fileInfoText').textContent = '';
+  });
+
+  document.getElementById('songFileInput').addEventListener('change', (e) => {
+    const files = e.target.files;
+    const infoText = document.getElementById('fileInfoText');
+    if (files.length > 0) {
+      const names = Array.from(files).map(f => f.name).join(', ');
+      infoText.textContent = `✅ ${files.length}টি গান নির্বাচিত: ${names.length > 60 ? names.substring(0, 60) + '...' : names}`;
+      infoText.style.color = '#e0568a';
+      infoText.style.fontWeight = 'bold';
+    } else {
+      infoText.textContent = '';
+    }
+  });
+
+  document.getElementById('confirmUpload').addEventListener('click', async () => {
+    const files = document.getElementById('songFileInput').files;
+    if (files.length === 0) return;
+
+    let addedCount = 0;
+    let duplicateCount = 0;
+
+    for (const f of files) {
+      const songName = f.name.replace(/\.[^.]+$/, '');
+      const isDuplicate = songs.some(s => (s.name || '').toLowerCase() === songName.toLowerCase());
+      if (!isDuplicate) {
+        await saveSong({
+          id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 8),
+          name: songName,
+          size: f.size,
+          fileData: f,
+          addedAt: Date.now(),
+          isFav: false
+        });
+        addedCount++;
+      } else {
+        duplicateCount++;
+      }
+    }
+
+    document.getElementById('songFileInput').value = '';
+    document.getElementById('fileInfoText').textContent = '';
+
+    if (duplicateCount > 0) {
+      alert(`⚠️ ${duplicateCount}টি গান আগে থেকেই আছে, সেগুলো বাদ দেওয়া হয়েছে।`);
+    }
+    if (addedCount > 0) {
+      alert(`✅ ${addedCount}টি নতুন গান যোগ করা হয়েছে।`);
+    }
+
+    document.getElementById('addSongModal').classList.add('hidden');
+    await loadSongs();
+  });
+
+  // ============================================================
+  // গান লোড
+  // ============================================================
+  async function loadSongs() {
+    songs = await getAllSongs();
+    renderSongs();
+  }
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+    setText('pageTitle', window.Lang.musicTitle());
+    setText('pageSubtitle', window.Lang.musicSubtitle());
+    setText('addSongBtn', window.Lang.musicAddBtn());
+    setText('shuffleAllBtn', window.Lang.musicShuffleBtn());
+    setText('selectModeBtn', window.Lang.musicSelectBtn());
+
+    const search = document.getElementById('musicSearch');
+    if (search) search.placeholder = window.Lang.musicSearchPlaceholder();
+
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+      sortSelect.options[0].text = window.Lang.musicSortNewest();
+      sortSelect.options[1].text = window.Lang.musicSortName();
+      sortSelect.options[2].text = window.Lang.musicSortSize();
+      sortSelect.options[3].text = window.Lang.musicSortFav();
+    }
+  }
+
+  // ============================================================
+  // ইনিশিয়ালাইজ
+  // ============================================================
+  updatePageTexts();
+  loadSongs();
+
+  // pageshow → ফিরে এলে playlist রিফ্রেশ
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) loadSongs();
+  });
+
+})();
+</script>
+
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

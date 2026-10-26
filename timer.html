@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#e0568a">
+  <title>টাইমার ⏳</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="language.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient-start, #fff0f5);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      transition: background 0.3s, color 0.3s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .timer-container {
+      width: 100%;
+      max-width: 460px;
+      background: var(--card-bg, #ffffff);
+      border-radius: 32px;
+      padding: 28px 24px 32px;
+      box-shadow: 0 20px 50px rgba(224, 86, 138, 0.15), 0 4px 12px rgba(224, 86, 138, 0.08);
+      transition: background 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .timer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+
+    .back-btn {
+      background: var(--card-bg, #ffffff); border: none; font-size: 26px; cursor: pointer;
+      color: var(--pink-main, #e0568a); padding: 4px 8px 4px 0;
+      line-height: 1; transition: transform 0.15s; flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(224, 86, 138, 0.15);
+      border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    }
+    .back-btn:active { transform: scale(0.9); }
+
+    .project-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; color: var(--text, #333);
+      background: var(--pink-light, #fff0f5); padding: 7px 14px 7px 10px;
+      border-radius: 30px; transition: background 0.3s, color 0.3s;
+      max-width: 75%; overflow: hidden;
+    }
+    .project-badge .name {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .project-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    .mode-tabs {
+      display: flex; gap: 6px; background: var(--pink-light, #fff0f5);
+      border-radius: 40px; padding: 5px; margin-bottom: 26px;
+      transition: background 0.3s;
+    }
+
+    .mode-tab {
+      flex: 1; border: none; background: transparent;
+      padding: 11px 6px; border-radius: 36px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      color: var(--pink-dark, #a0657e); cursor: pointer;
+      transition: 0.2s; white-space: nowrap;
+    }
+    .mode-tab.active {
+      background: var(--pink-main, #e0568a); color: #fff;
+      box-shadow: 0 4px 12px rgba(224, 86, 138, 0.35);
+    }
+    .mode-tab:active { transform: scale(0.96); }
+
+    .timer-circle-wrap {
+      position: relative; width: 250px; height: 250px;
+      margin: 0 auto 22px;
+    }
+    .timer-circle-wrap svg {
+      width: 100%; height: 100%; transform: rotate(-90deg);
+      filter: drop-shadow(0 0 20px rgba(224, 86, 138, 0.15));
+    }
+
+    .timer-circle-bg {
+      fill: none; stroke: var(--pink-soft, #ffe4ec); stroke-width: 11;
+      transition: stroke 0.3s;
+    }
+
+    .timer-circle-progress {
+      fill: none; stroke: var(--pink-main, #e0568a);
+      stroke-width: 11; stroke-linecap: round;
+      transition: stroke-dashoffset 0.3s linear, stroke 0.3s;
+    }
+
+    .timer-text {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px;
+    }
+    .time-display {
+      font-size: 52px; font-weight: 700; color: var(--text, #333);
+      letter-spacing: 1px; font-variant-numeric: tabular-nums;
+      line-height: 1; transition: color 0.3s;
+    }
+
+    .phase-label {
+      font-size: 13px; font-weight: 600;
+      color: var(--pink-dark, #a0657e);
+      letter-spacing: 0.5px; transition: color 0.3s; margin-top: 2px;
+    }
+
+    .rounds-info {
+      display: flex; align-items: center; justify-content: center;
+      gap: 7px; margin-bottom: 24px; flex-wrap: wrap; min-height: 26px;
+    }
+    .round-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--pink-soft, #ffe4ec); transition: 0.3s;
+    }
+    .round-dot.done {
+      background: var(--pink-main, #e0568a);
+      box-shadow: 0 0 0 3px rgba(224, 86, 138, 0.15);
+    }
+    .round-dot.current {
+      background: var(--pink-mid, #ffb6c1); transform: scale(1.35);
+      box-shadow: 0 0 0 4px rgba(224, 86, 138, 0.18);
+    }
+    .rounds-text {
+      font-size: 12px; color: var(--pink-dark, #999); margin-left: 8px; font-weight: 600;
+    }
+
+    .controls {
+      display: flex; align-items: center; justify-content: center; gap: 20px;
+    }
+    .ctrl-btn {
+      border: none; cursor: pointer; font-family: inherit;
+      transition: 0.15s; display: flex; align-items: center; justify-content: center;
+    }
+    .ctrl-btn:active { transform: scale(0.9); }
+
+    .ctrl-secondary {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--pink-light, #fff0f5); color: var(--pink-main, #e0568a);
+      font-size: 20px; transition: background 0.3s;
+    }
+
+    .ctrl-primary {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink-main, #e0568a) 0%, var(--pink-dark, #d94a7e) 100%);
+      color: #fff; font-size: 30px;
+      box-shadow: 0 10px 25px rgba(224, 86, 138, 0.45);
+      transition: 0.2s;
+    }
+    .ctrl-primary:active { box-shadow: 0 4px 12px rgba(224, 86, 138, 0.35); }
+    .ctrl-primary.paused {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+      box-shadow: 0 10px 25px rgba(255, 152, 0, 0.45);
+    }
+
+    .stats-row {
+      display: flex; justify-content: center; gap: 28px;
+      margin-top: 26px; padding-top: 20px;
+      border-top: 1px solid var(--pink-soft, #ffe4ec); transition: border-color 0.3s;
+    }
+
+    .stat-item { text-align: center; }
+    .stat-val {
+      font-size: 18px; font-weight: 700;
+      color: var(--pink-main, #e0568a); font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 11px; color: var(--pink-dark, #999); margin-top: 3px; font-weight: 500;
+    }
+
+    .finish-toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      color: #fff; padding: 14px 28px; border-radius: 40px;
+      font-weight: 600; font-size: 15px;
+      box-shadow: 0 8px 24px rgba(46, 204, 113, 0.45);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 999; white-space: nowrap; max-width: 90vw; text-align: center;
+    }
+    .finish-toast.show { transform: translateX(-50%) translateY(0); }
+
+    .empty-state { text-align: center; padding: 40px 20px; }
+    .empty-state .big { font-size: 56px; display: block; margin-bottom: 16px; }
+    .empty-state p { color: var(--pink-dark, #999); font-size: 15px; line-height: 1.6; }
+    .empty-state a {
+      color: var(--pink-main, #e0568a); font-weight: 600; text-decoration: none;
+    }
+
+    @media (max-width: 380px) {
+      .time-display { font-size: 42px; }
+      .timer-circle-wrap { width: 210px; height: 210px; }
+      .ctrl-primary { width: 70px; height: 70px; font-size: 26px; }
+      .ctrl-secondary { width: 50px; height: 50px; font-size: 18px; }
+      .mode-tab { font-size: 12px; padding: 9px 4px; }
+      .stat-val { font-size: 16px; }
+      .stats-row { gap: 18px; }
+      .timer-container { padding: 22px 18px 26px; border-radius: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="timer-container" id="appContainer"></div>
+
+<div class="finish-toast" id="finishToast">✅ সম্পন্ন হয়েছে!</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // 🔒 সিকিউরিটি চেক
+  // ============================================================
+  const pw = localStorage.getItem('pinkDiaryPassword');
+  if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+    location.href = 'index.html';
+    return;
+  }
+
+  // ============================================================
+  // 🌐 ভাষা নির্ধারণ (SyntaxError ফিক্স)
+  // ============================================================
+  const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+  const isEn = currentLang === 'en';
+
+  // ছোট হেল্পার — Lang API-তে না থাকলে ফলব্যাক
+  function t(fn, fallback) {
+    try {
+      const v = window.Lang && typeof window.Lang[fn] === 'function' ? window.Lang[fn]() : null;
+      return (v && String(v).trim()) ? v : fallback;
+    } catch (e) { return fallback; }
+  }
+
+  // ============================================================
+  // 📦 অ্যাক্টিভ প্রজেক্ট লোড
+  // ============================================================
+  const raw = localStorage.getItem('activeProject');
+  let project = null;
+  try { project = raw ? JSON.parse(raw) : null; } catch (e) { project = null; }
+
+  const appContainer = document.getElementById('appContainer');
+
+  if (!project || typeof project !== 'object') {
+    appContainer.innerHTML = `
+      <div class="empty-state">
+        <span class="big">⏳</span>
+        <p style="margin-bottom:16px;">${isEn ? 'No project selected.' : 'কোনো প্রজেক্ট সিলেক্ট করা হয়নি।'}</p>
+        <a href="pomodoro.html">← ${isEn ? 'Back to project list' : 'প্রজেক্ট লিস্টে ফিরে যান'}</a>
+      </div>
+    `;
+    return;
+  }
+
+  // ============================================================
+  // 🕒 টাইম নরমালাইজ
+  // ============================================================
+  function normalizeTime(val) {
+    if (!val) return { h: 0, m: 0, s: 0 };
+    if (typeof val === 'number') return { h: 0, m: Math.floor(val), s: 0 };
+    return { h: val.h || 0, m: val.m || 0, s: val.s || 0 };
+  }
+
+  function toSeconds(tobj) {
+    if (!tobj) return 0;
+    return (tobj.h || 0) * 3600 + (tobj.m || 0) * 60 + (tobj.s || 0);
+  }
+
+  const focusTime = normalizeTime(project.focus);
+  const shortBreak = project.short ? normalizeTime(project.short) : null;
+  const totalRounds = Math.max(1, parseInt(project.rounds) || 1);
+  const projectName = (project.name && String(project.name).trim())
+    ? String(project.name).trim()
+    : (isEn ? 'Untitled Project' : 'নামহীন প্রজেক্ট');
+  const projectColor = project.color || '#e0568a';
+
+  const focusSeconds = toSeconds(focusTime);
+  const shortBreakSeconds = shortBreak ? toSeconds(shortBreak) : 0;
+  const hasShortBreak = shortBreakSeconds > 0;
+
+  if (focusSeconds <= 0) {
+    appContainer.innerHTML = `
+      <div class="empty-state">
+        <span class="big">⚠️</span>
+        <p style="margin-bottom:16px;">${isEn ? 'Invalid focus time in project.' : 'প্রজেক্টে ভুল ফোকাস টাইম আছে।'}</p>
+        <a href="pomodoro.html">← ${isEn ? 'Back' : 'ফিরে যান'}</a>
+      </div>
+    `;
+    return;
+  }
+
+  // ============================================================
+  // 🎯 ফেজ
+  // ============================================================
+  const PHASES = {
+    FOCUS: {
+      key: 'FOCUS',
+      label: t('timerFocus', '🎯 ফোকাস'),
+      seconds: focusSeconds,
+      color: projectColor
+    },
+    SHORT: {
+      key: 'SHORT',
+      label: t('timerBreak', '☕ শর্ট ব্রেক'),
+      seconds: shortBreakSeconds,
+      color: '#35bcd6'
+    }
+  };
+
+  // ============================================================
+  // 🔊 সাউন্ড / ভাইব্রেশন / নোটিফিকেশন
+  // ============================================================
+  let audioCtx = null;
+  function getAudioCtx() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    } catch (e) { return null; }
+  }
+
+  function playTone(type) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    let freqs, durations;
+    if (type === 'focus-end') {
+      freqs = [659.25, 783.99, 1046.50];
+      durations = [0.15, 0.15, 0.3];
+    } else if (type === 'break-end') {
+      freqs = [523.25, 659.25, 783.99];
+      durations = [0.15, 0.15, 0.3];
+    } else {
+      freqs = [523.25, 659.25, 783.99, 1046.50];
+      durations = [0.15, 0.15, 0.15, 0.5];
+    }
+
+    try {
+      let t = ctx.currentTime;
+      freqs.forEach((f, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.18, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + durations[i]);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + durations[i]);
+        t += durations[i] * 0.9;
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  function vibrate(pattern) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
+  }
+
+  let notifyPermissionRequested = false;
+  async function requestNotifyPermission() {
+    if (!('Notification' in window)) return false;
+    if (Notification.permission === 'granted') return true;
+    if (Notification.permission === 'denied') return false;
+    if (notifyPermissionRequested) return false;
+    notifyPermissionRequested = true;
+    try {
+      const perm = await Notification.requestPermission();
+      return perm === 'granted';
+    } catch (e) { return false; }
+  }
+
+  function showNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification(title, {
+        body: body,
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
+        tag: 'pomodoro-phase',
+        renotify: true,
+        silent: true
+      });
+      setTimeout(() => { try { n.close(); } catch (e) {} }, 5000);
+    } catch (e) { /* ignore */ }
+  }
+
+  function announcePhaseChange(type) {
+    if (type === 'focus-end') {
+      if (hasShortBreak) {
+        vibrate([200, 100, 200, 100, 300]);
+        playTone('focus-end');
+        showNotification(
+          isEn ? '🎯 Focus Complete!' : '🎯 ফোকাস সম্পন্ন!',
+          isEn ? '☕ Break started' : '☕ ব্রেক শুরু হয়েছে'
+        );
+      } else {
+        vibrate([200, 100, 200]);
+        playTone('focus-end');
+        showNotification(
+          isEn ? '🎯 Focus Complete!' : '🎯 ফোকাস সম্পন্ন!',
+          isEn ? 'Next focus starting' : 'পরবর্তী ফোকাস শুরু'
+        );
+      }
+    } else if (type === 'break-end') {
+      vibrate([200, 100, 200, 100, 300]);
+      playTone('break-end');
+      showNotification(
+        isEn ? '☕ Break Over!' : '☕ ব্রেক শেষ!',
+        isEn ? '🎯 Focus starting again' : '🎯 আবার ফোকাস শুরু'
+      );
+    } else if (type === 'all-done') {
+      vibrate([300, 150, 300, 150, 500, 150, 500]);
+      playTone('all-done');
+      showNotification(
+        isEn ? '🎉 All rounds complete!' : '🎉 সব রাউন্ড সম্পন্ন!',
+        isEn ? 'Your session is over' : 'আপনার সেশন শেষ হয়েছে'
+      );
+    }
+  }
+
+  // ============================================================
+  // 🧠 স্টেট
+  // ============================================================
+  const state = {
+    currentPhase: 'FOCUS',
+    remaining: focusSeconds,         // UI-তে যা দেখানো হবে
+    isRunning: false,
+    completedRounds: 0,
+    timerId: null,                    // setInterval id
+    // ⏱️ Timestamp ভিত্তিক (স্ক্রিন বন্ধ হলেও সঠিক সময়)
+    endTime: 0,                       // কখন ফেজ শেষ হবে (epoch ms)
+    phaseTotalSeconds: focusSeconds,  // বর্তমান ফেজের মোট সেকেন্ড
+    totalElapsed: 0,                  // মোট কত সেকেন্ড চলেছে
+    focusSecondsDone: 0,              // কত সেকেন্ড ফোকাস হয়েছে
+    lastTickAt: 0,                    // শেষ tick-এর timestamp
+    autoTransitioning: false,
+    completed: false                  // সব রাউন্ড শেষ?
+  };
+
+  // ============================================================
+  // 🎨 UI রেন্ডার
+  // ============================================================
+  function renderUI() {
+    const tabs = [
+      `<button class="mode-tab ${state.currentPhase === 'FOCUS' ? 'active' : ''}" data-phase="FOCUS">${PHASES.FOCUS.label}</button>`
+    ];
+    if (hasShortBreak) {
+      tabs.push(`<button class="mode-tab ${state.currentPhase === 'SHORT' ? 'active' : ''}" data-phase="SHORT">${PHASES.SHORT.label}</button>`);
+    }
+
+    appContainer.innerHTML = `
+      <div class="timer-header">
+        <button class="back-btn" id="backBtn" type="button">←</button>
+        <div class="project-badge">
+          <span class="project-dot" style="background:${escapeHtml(projectColor)}"></span>
+          <span class="name">${escapeHtml(projectName)}</span>
+        </div>
+      </div>
+
+      <div class="mode-tabs" id="modeTabs">${tabs.join('')}</div>
+
+      <div class="timer-circle-wrap">
+        <svg viewBox="0 0 250 250">
+          <circle class="timer-circle-bg" cx="125" cy="125" r="115"></circle>
+          <circle class="timer-circle-progress" id="progressCircle" cx="125" cy="125" r="115"
+            stroke="${PHASES[state.currentPhase].color}"></circle>
+        </svg>
+        <div class="timer-text">
+          <div class="time-display" id="timeDisplay">--:--</div>
+          <div class="phase-label" id="phaseLabel"></div>
+        </div>
+      </div>
+
+      <div class="rounds-info" id="roundsInfo"></div>
+
+      <div class="controls">
+        <button class="ctrl-btn ctrl-secondary" id="resetBtn" type="button" title="${isEn ? 'Reset' : 'রিসেট'}">⟲</button>
+        <button class="ctrl-btn ctrl-primary" id="playBtn" type="button">
+          ${state.isRunning ? '⏸' : '▶'}
+        </button>
+        <button class="ctrl-btn ctrl-secondary" id="skipBtn" type="button" title="${isEn ? 'Skip' : 'পরবর্তী'}">⏭</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-val" id="statRounds">0/${totalRounds}</div>
+          <div class="stat-label">${isEn ? 'Rounds' : 'রাউন্ড'}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="statElapsed">00:00</div>
+          <div class="stat-label">${isEn ? 'Total Time' : 'মোট সময়'}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="statFocus">0</div>
+          <div class="stat-label">${isEn ? 'Focus Min' : 'ফোকাস মিনিট'}</div>
+        </div>
+      </div>
+    `;
+
+    bindEvents();
+    updateDisplay();
+    updateProgress();
+    updateRounds();
+  }
+
+  function bindEvents() {
+    document.getElementById('playBtn').addEventListener('click', toggleTimer);
+    document.getElementById('resetBtn').addEventListener('click', resetTimer);
+    document.getElementById('skipBtn').addEventListener('click', skipPhase);
+    document.getElementById('backBtn').addEventListener('click', goBack);
+
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const phase = tab.dataset.phase;
+        if (phase === state.currentPhase) return;
+        if (state.isRunning) {
+          const msg = isEn
+            ? 'Timer is running. Changing mode will reset progress. Continue?'
+            : 'টাইমার চলছে। মোড পরিবর্তন করলে বর্তমান অগ্রগতি রিসেট হবে। চালিয়ে যাবেন?';
+          if (!confirm(msg)) return;
+        }
+        switchPhase(phase, true);
+      });
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // 🖥️ ডিসপ্লে আপডেট
+  // ============================================================
+  function formatTime(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function updateDisplay() {
+    const timeEl = document.getElementById('timeDisplay');
+    const phaseEl = document.getElementById('phaseLabel');
+    if (!timeEl) return;
+
+    timeEl.textContent = formatTime(state.remaining);
+    phaseEl.textContent = PHASES[state.currentPhase].label;
+
+    const statRounds = document.getElementById('statRounds');
+    if (statRounds) statRounds.textContent = `${state.completedRounds}/${totalRounds}`;
+
+    const statElapsed = document.getElementById('statElapsed');
+    if (statElapsed) statElapsed.textContent = formatTime(state.totalElapsed);
+
+    const statFocus = document.getElementById('statFocus');
+    if (statFocus) statFocus.textContent = Math.floor(state.focusSecondsDone / 60);
+
+    const playBtn = document.getElementById('playBtn');
+    if (playBtn) {
+      playBtn.innerHTML = state.isRunning ? '⏸' : '▶';
+      playBtn.classList.toggle('paused', state.isRunning);
+    }
+
+    // টাইটেল আপডেট
+    document.title = state.isRunning
+      ? `${formatTime(state.remaining)} · ${PHASES[state.currentPhase].label}`
+      : (isEn ? 'Timer ⏳' : 'টাইমার ⏳');
+
+    const prog = document.getElementById('progressCircle');
+    if (prog) prog.setAttribute('stroke', PHASES[state.currentPhase].color);
+  }
+
+  function updateProgress() {
+    const circle = document.getElementById('progressCircle');
+    if (!circle) return;
+    const r = 115;
+    const circumference = 2 * Math.PI * r;
+    const total = state.phaseTotalSeconds || 1;
+    const fraction = Math.min(1, Math.max(0, state.remaining / total));
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = circumference * (1 - fraction);
+  }
+
+  function updateRounds() {
+    const info = document.getElementById('roundsInfo');
+    if (!info) return;
+
+    let dots = '';
+    for (let i = 0; i < totalRounds; i++) {
+      let cls = 'round-dot';
+      if (i < state.completedRounds) cls += ' done';
+      else if (i === state.completedRounds && state.completedRounds < totalRounds) cls += ' current';
+      dots += `<span class="${cls}"></span>`;
+    }
+    const txt = `<span class="rounds-text">${state.completedRounds}/${totalRounds} ${isEn ? 'rounds' : 'রাউন্ড'}</span>`;
+    info.innerHTML = dots + txt;
+  }
+
+  // ============================================================
+  // ▶️ স্টার্ট / পজ / রিসেট / স্কিপ
+  // ============================================================
+  function toggleTimer() {
+    if (state.isRunning) pauseTimer();
+    else startTimer();
+  }
+
+  function startTimer() {
+    if (state.isRunning) return;
+    if (state.completed) return;
+
+    getAudioCtx();
+    requestNotifyPermission();
+
+    // ✅ Timestamp ভিত্তিক
+    state.endTime = Date.now() + state.remaining * 1000;
+    state.lastTickAt = Date.now();
+    state.isRunning = true;
+
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = setInterval(tick, 250);
+
+    updateDisplay();
+    updateRounds();
+  }
+
+  function pauseTimer() {
+    if (!state.isRunning) return;
+    state.isRunning = false;
+    syncRemainingFromTimestamp();
+    if (state.timerId) {
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+    updateDisplay();
+    updateRounds();
+  }
+
+  // ✅ স্ক্রিন বন্ধ হলে বা ফিরে এলে interval থ্রটল হলেও সঠিকভাবে হিসাব
+  function syncRemainingFromTimestamp() {
+    if (!state.endTime) return;
+    const diffMs = state.endTime - Date.now();
+    state.remaining = Math.max(0, Math.round(diffMs / 1000));
+  }
+
+  function tick() {
+    if (!state.isRunning) return;
+
+    // ⏱️ elapsed হিসাব (tick মিস হলেও সঠিকভাবে যোগ হবে)
+    const now = Date.now();
+    const delta = Math.max(0, (now - (state.lastTickAt || now)) / 1000);
+    state.lastTickAt = now;
+
+    // টাইমস্ট্যাম্প থেকে remaining বের করা
+    syncRemainingFromTimestamp();
+
+    // elapsed হিসাব
+    if (state.currentPhase === 'FOCUS') {
+      state.focusSecondsDone += delta;
+    }
+    state.totalElapsed += delta;
+
+    updateDisplay();
+    updateProgress();
+
+    if (state.remaining <= 0) {
+      phaseComplete();
+    }
+  }
+
+  function phaseComplete() {
+    if (!state.isRunning && state.remaining > 0) return;
+
+    // ⚠️ Guard — double trigger রোধ
+    if (state.autoTransitioning) return;
+    state.autoTransitioning = true;
+
+    pauseTimer();
+    state.remaining = 0;
+    updateDisplay();
+    updateProgress();
+
+    if (state.currentPhase === 'FOCUS') {
+      state.completedRounds += 1;
+      updateRounds();
+
+      if (state.completedRounds >= totalRounds) {
+        state.completedRounds = totalRounds;
+        state.completed = true;
+        updateDisplay();
+        updateRounds();
+        announcePhaseChange('all-done');
+        state.autoTransitioning = false;
+        return;
+      }
+
+      announcePhaseChange('focus-end');
+      if (hasShortBreak) {
+        showToast(isEn ? '✅ Focus done! Break started ☕' : '✅ ফোকাস সম্পন্ন! ব্রেক শুরু ☕');
+        switchPhase('SHORT', false);
+      } else {
+        showToast(isEn ? '✅ Focus done! Next focus starting 🎯' : '✅ ফোকাস সম্পন্ন! পরের ফোকাস শুরু 🎯');
+        switchPhase('FOCUS', false);
+      }
+    } else if (state.currentPhase === 'SHORT') {
+      announcePhaseChange('break-end');
+      showToast(isEn ? '☕ Break over! Focus starting 🎯' : '☕ ব্রেক শেষ! ফোকাস শুরু 🎯');
+      switchPhase('FOCUS', false);
+    }
+
+    // auto-transition
+    setTimeout(() => {
+      if (!state.completed && !state.isRunning && state.remaining > 0) {
+        startTimer();
+      }
+      state.autoTransitioning = false;
+    }, 1000);
+  }
+
+  function switchPhase(phase, manual) {
+    if (state.timerId) {
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+    state.isRunning = false;
+    state.currentPhase = phase;
+    state.phaseTotalSeconds = PHASES[phase].seconds;
+    state.remaining = PHASES[phase].seconds;
+    state.endTime = 0;
+    state.lastTickAt = 0;
+
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.phase === phase);
+    });
+
+    updateDisplay();
+    updateProgress();
+    updateRounds();
+
+    if (manual) state.completed = false;
+  }
+
+  function resetTimer() {
+    const msg = isEn ? 'Reset the timer?' : 'টাইমার রিসেট করবেন?';
+    if (state.isRunning && !confirm(msg)) return;
+
+    if (state.timerId) {
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+
+    state.isRunning = false;
+    state.autoTransitioning = false;
+    state.completed = false;
+    state.remaining = PHASES[state.currentPhase].seconds;
+    state.phaseTotalSeconds = PHASES[state.currentPhase].seconds;
+    state.totalElapsed = 0;
+    state.focusSecondsDone = 0;
+    state.completedRounds = 0;
+    state.endTime = 0;
+    state.lastTickAt = 0;
+
+    updateDisplay();
+    updateProgress();
+    updateRounds();
+    showToast(isEn ? '⟲ Reset done' : '⟲ রিসেট হয়েছে');
+  }
+
+  function skipPhase() {
+    if (state.timerId) {
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+    state.isRunning = false;
+    state.endTime = 0;
+
+    if (state.currentPhase === 'FOCUS') {
+      state.completedRounds += 1;
+      if (state.completedRounds >= totalRounds) {
+        state.completedRounds = totalRounds;
+        state.completed = true;
+        updateDisplay();
+        updateRounds();
+        showToast(isEn ? '🎉 All rounds complete!' : '🎉 সব রাউন্ড সম্পন্ন!');
+        return;
+      }
+      switchPhase(hasShortBreak ? 'SHORT' : 'FOCUS', false);
+    } else {
+      switchPhase('FOCUS', false);
+    }
+  }
+
+  // ============================================================
+  // 🔔 টোস্ট
+  // ============================================================
+  let toastTimer = null;
+  function showToast(msg) {
+    const toast = document.getElementById('finishToast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  // ============================================================
+  // ⬅️ ব্যাক
+  // ============================================================
+  function goBack() {
+    const msg = isEn
+      ? 'Timer is running. Leaving will stop it. Leave?'
+      : 'টাইমার চলছে। বের হলে টাইমার বন্ধ হবে। বের হবেন?';
+    if (state.isRunning && !confirm(msg)) return;
+    if (state.timerId) clearInterval(state.timerId);
+    location.href = 'pomodoro.html';
+  }
+
+  // ============================================================
+  // 📱 স্ক্রিন ফিরে এলে টাইমার সিঙ্ক
+  // ============================================================
+  function syncOnVisibility() {
+    if (document.visibilityState === 'visible' && state.isRunning) {
+      syncRemainingFromTimestamp();
+      updateDisplay();
+      updateProgress();
+      if (state.remaining <= 0) {
+        phaseComplete();
+      }
+    }
+  }
+
+  document.addEventListener('visibilitychange', syncOnVisibility);
+
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      syncOnVisibility();
+    }
+  });
+
+  // ============================================================
+  // 🚪 beforeunload — টাইমার চললে সতর্ক
+  // ============================================================
+  window.addEventListener('beforeunload', (e) => {
+    if (state.isRunning) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    if (state.timerId) clearInterval(state.timerId);
+  });
+
+  // ============================================================
+  // 🎬 ইনিশিয়ালাইজ
+  // ============================================================
+  renderUI();
+  requestAnimationFrame(updateProgress);
+
+  // প্রথম ক্লিকে audio context ও notification অনুমতি
+  document.body.addEventListener('click', function once() {
+    getAudioCtx();
+    requestNotifyPermission();
+    document.body.removeEventListener('click', once);
+  }, { once: true });
+
+})();
+</script>
+
+<script src="theme.js"></script>
+</body>
+</html>

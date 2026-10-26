@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#e0568a">
+<title>নোট এডিটর ✏️</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body { margin: 0; padding: 0; overflow: hidden; }
+
+  .note-editor {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    background: #fff;
+    transition: background 0.2s ease;
+  }
+
+  .note-editor-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-bottom: 1px solid #ffe4ec;
+    background: rgba(255, 250, 252, 0.95);
+    backdrop-filter: blur(10px);
+    gap: 8px; flex-shrink: 0;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .ne-icon-btn {
+    background: none; border: none; font-size: 20px;
+    cursor: pointer; padding: 6px; opacity: 0.7;
+    color: var(--text, #333); border-radius: 8px;
+    transition: 0.15s; font-family: inherit;
+    min-width: 36px; min-height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ne-icon-btn:active { background: #ffe4ec; }
+  .ne-icon-btn.primary { color: var(--pink-main, #e0568a); opacity: 1; font-weight: 700; }
+  .ne-header-right { display: flex; gap: 6px; align-items: center; }
+
+  /* ✅ Auto-save indicator */
+  .ne-save-indicator {
+    font-size: 11px;
+    color: #2ecc71;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: rgba(46, 204, 113, 0.1);
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .ne-save-indicator.show {
+    opacity: 1;
+  }
+  .ne-save-indicator.saving {
+    color: #f39c12;
+    background: rgba(243, 156, 18, 0.1);
+  }
+
+  .note-editor-body {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ne-title {
+    width: 100%; border: none; outline: none; background: transparent;
+    font-family: inherit; font-size: 22px; font-weight: 700;
+    color: var(--text, #333); padding: 4px 0 10px;
+  }
+  .ne-title::placeholder { color: #d9bccb; }
+
+  .ne-divider { height: 1px; background: #ffe4ec; margin-bottom: 12px; transition: background 0.2s; }
+
+  .ne-content {
+    width: 100%; border: none; outline: none;
+    background: transparent; font-family: inherit;
+    font-size: 15px; line-height: 1.7;
+    color: var(--text, #333); resize: none;
+    flex: 1; min-height: 200px; padding: 0;
+    overflow: hidden;
+  }
+  .ne-content::placeholder { color: #d9bccb; }
+
+  .ne-checklist { display: flex; flex-direction: column; gap: 4px; }
+  .ne-check-row {
+    display: flex; align-items: center; gap: 8px; padding: 4px 0;
+  }
+  .ne-check-box {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--pink-main, #e0568a);
+    background: transparent; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #fff; padding: 0;
+    font-family: inherit;
+  }
+  .ne-check-box.checked { background: var(--pink-main, #e0568a); }
+  .ne-check-input {
+    flex: 1; border: none; outline: none; background: transparent;
+    font-family: inherit; font-size: 14px; color: var(--text, #333);
+    padding: 6px 4px; min-width: 0;
+  }
+  .ne-check-input.done { text-decoration: line-through; opacity: 0.6; }
+  .ne-check-del {
+    background: none; border: none; font-size: 14px;
+    opacity: 0.4; cursor: pointer; padding: 4px; flex-shrink: 0;
+    font-family: inherit;
+  }
+  .ne-add-check {
+    background: none; border: none; font-family: inherit;
+    color: var(--pink-main, #e0568a); font-weight: 600;
+    font-size: 13px; cursor: pointer; padding: 10px 0; text-align: left;
+  }
+
+  .ne-attachments {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px dashed #ffe4ec;
+    transition: border-color 0.2s;
+  }
+  .ne-attach-item {
+    position: relative; border-radius: 10px;
+    overflow: hidden; background: #fffafc;
+    border: 1px solid #ffe4ec;
+  }
+  .ne-attach-img { width: 100px; height: 100px; object-fit: cover; display: block; }
+  .ne-attach-audio {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px; font-size: 12px;
+  }
+  .ne-attach-del {
+    position: absolute; top: 2px; right: 2px;
+    background: rgba(214, 58, 95, 0.9); color: #fff;
+    border: none; border-radius: 50%;
+    width: 20px; height: 20px; font-size: 11px;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; padding: 0; font-family: inherit;
+  }
+
+  /* মেনু */
+  .ne-menu-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 300; animation: fadeIn 0.2s ease;
+  }
+  .ne-menu-content {
+    background: var(--card-bg, #fff); width: 100%; max-width: 480px;
+    border-radius: 24px 24px 0 0; padding: 20px 16px 32px;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .ne-menu-item {
+    display: flex; align-items: center; gap: 12px;
+    background: transparent; border: none; width: 100%;
+    padding: 12px 16px; border-radius: 12px; font-family: inherit;
+    font-size: 15px; font-weight: 600; color: var(--text, #333);
+    cursor: pointer; transition: 0.15s; text-align: left;
+  }
+  .ne-menu-item:active { background: var(--pink-soft, #ffe3ee); }
+  .ne-menu-item.danger { color: #d63a5f; }
+
+  .ne-tag-input-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
+  .ne-tag-input {
+    flex: 1; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid #ffe4ec; font-family: inherit;
+    font-size: 14px; background: #fffafc; outline: none;
+    color: var(--text, #333);
+  }
+  .ne-tag-list {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+  }
+  .ne-tag-item {
+    background: #ffe4ec; color: var(--pink-main, #e0568a);
+    padding: 5px 10px; border-radius: 20px; font-size: 12px;
+    font-weight: 600; display: flex; align-items: center; gap: 4px;
+  }
+  .ne-tag-remove {
+    background: none; border: none; color: #d63a5f;
+    font-size: 14px; cursor: pointer; padding: 0; line-height: 1;
+    font-family: inherit;
+  }
+
+  .ne-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .ne-modal-card {
+    background: var(--card-bg, #fff); border-radius: 20px; padding: 20px;
+    width: 100%; max-width: 340px; max-height: 80vh;
+    overflow-y: auto; color: var(--text, #333);
+  }
+  .ne-modal-card h3 {
+    font-size: 16px; color: var(--pink-main, #e0568a);
+    margin-bottom: 14px; font-weight: 700;
+  }
+
+  /* ডার্ক থিম */
+  body.dark .note-editor { background: #1e161b; }
+  body.dark .note-editor-header { background: rgba(47, 35, 41, 0.95); border-bottom-color: #4a3340; }
+  body.dark .ne-icon-btn { color: #eee; }
+  body.dark .ne-icon-btn:active { background: #3a2a33; }
+  body.dark .ne-icon-btn.primary { color: #ff9bb6; }
+  body.dark .ne-title, body.dark .ne-content { color: #eee; }
+  body.dark .ne-title::placeholder, body.dark .ne-content::placeholder { color: #8a6f7a; }
+  body.dark .ne-divider { background: #4a3340; }
+  body.dark .ne-menu-content { background: #2f2329; color: #eee; }
+  body.dark .ne-menu-item { color: #eee; }
+  body.dark .ne-menu-item:active { background: #3a2a33; }
+  body.dark .ne-modal-card { background: #2f2329; }
+  body.dark .ne-tag-input { background: #3a2a33; border-color: #4a3340; color: #eee; }
+  body.dark .ne-tag-item { background: #4a3340; color: #ff9bb6; }
+  body.dark .ne-attach-item { background: #3a2a33; border-color: #4a3340; }
+  body.dark .ne-check-input { color: #eee; }
+  body.dark .ne-add-check { color: #ff9bb6; }
+  body.dark .ne-attachments { border-top-color: #4a3340; }
+
+  /* ব্লু থিম */
+  body.blue .note-editor { background: #0f172a; }
+  body.blue .note-editor-header { background: rgba(30, 41, 59, 0.95); border-bottom-color: #334155; }
+  body.blue .ne-icon-btn { color: #e2e8f0; }
+  body.blue .ne-icon-btn:active { background: #334155; }
+  body.blue .ne-icon-btn.primary { color: #60a5fa; }
+  body.blue .ne-title, body.blue .ne-content { color: #e2e8f0; }
+  body.blue .ne-title::placeholder, body.blue .ne-content::placeholder { color: #64748b; }
+  body.blue .ne-divider { background: #334155; }
+  body.blue .ne-menu-content { background: #1e293b; color: #e2e8f0; }
+  body.blue .ne-menu-item { color: #e2e8f0; }
+  body.blue .ne-menu-item:active { background: #334155; }
+  body.blue .ne-modal-card { background: #1e293b; color: #e2e8f0; }
+  body.blue .ne-tag-input { background: #334155; border-color: #475569; color: #e2e8f0; }
+  body.blue .ne-tag-item { background: #334155; color: #60a5fa; }
+  body.blue .ne-attach-item { background: #1e293b; border-color: #334155; }
+  body.blue .ne-check-input { color: #e2e8f0; }
+  body.blue .ne-add-check { color: #60a5fa; }
+  body.blue .ne-attachments { border-top-color: #334155; }
+</style>
+</head>
+<body>
+
+<div class="note-editor" id="noteEditor">
+  <div class="note-editor-header">
+    <button class="ne-icon-btn" id="neBack" type="button">←</button>
+    <div class="ne-save-indicator" id="neSaveIndicator"></div>
+    <div class="ne-header-right">
+      <button class="ne-icon-btn" id="toolMore" type="button" title="মেনু">⋮</button>
+      <button class="ne-icon-btn" id="nePin" type="button" title="পিন">📍</button>
+      <button class="ne-icon-btn" id="neLock" type="button" title="লক">🔓</button>
+      <button class="ne-icon-btn primary" id="neSave" type="button" title="সেভ">✓</button>
+    </div>
+  </div>
+
+  <div class="note-editor-body">
+    <input type="text" class="ne-title" id="neTitle" placeholder="শিরোনাম...">
+    <div class="ne-divider"></div>
+    <div id="neContentArea"></div>
+    <div class="ne-attachments" id="neAttach"></div>
+  </div>
+
+  <input type="file" id="neImageInput" accept="image/*" style="display:none;">
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const isEn = window.Lang ? window.Lang.lang() === 'en' : false;
+
+  // ============================================================
+  // IndexedDB
+  // ============================================================
+  const DB_NAME = 'pinkDiaryNotesDB';
+  const DB_VERSION = 2;
+  const STORE = 'notes';
+  let db = null;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      if (db) return resolve(db);
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(STORE)) {
+          const store = database.createObjectStore(STORE, { keyPath: 'id' });
+          store.createIndex('updatedAt', 'updatedAt');
+          store.createIndex('pinned', 'pinned');
+        }
+      };
+      req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      req.onerror = (e) => {
+        console.error('DB Open Error:', e.target.error);
+        reject(e.target.error);
+      };
+    });
+  }
+
+  async function getNote(id) {
+    const database = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(id);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function saveNote(note) {
+    const database = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).put(note);
+      req.onsuccess = () => resolve(note);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function deleteNoteDB(id) {
+    const database = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // ============================================================
+  // স্টেট
+  // ============================================================
+  let editingNote = null;
+  let autoSaveTimer = null;
+  let saveIndicatorTimer = null;
+  let pendingImages = [];
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let audioTimer = null;
+  let isSaving = false;
+  let hasRedirected = false;
+  let lastSavedSnapshot = '';   // ✅ পরিবর্তন ট্র্যাক করতে
+
+  // ============================================================
+  // Utility
+  // ============================================================
+  function escapeHtml(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function safeEncode(str) {
+    try {
+      return btoa(unescape(encodeURIComponent(String(str))));
+    } catch (e) {
+      try { return btoa(String(str)); }
+      catch (err) { return String(str); }
+    }
+  }
+
+  function createNewNote() {
+    return {
+      id: Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7),
+      title: '',
+      text: '',
+      type: 'text',
+      checklist: [],
+      pinned: false,
+      locked: false,
+      lockPin: '',
+      tags: [],
+      images: [],
+      audios: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+  }
+
+  // ✅ কিছু লেখা আছে কি না
+  function hasRealContent(note) {
+    if (!note) return false;
+    if (note.title && note.title.trim()) return true;
+    if (note.text && note.text.trim()) return true;
+    if (note.checklist && note.checklist.some(i => i.text && i.text.trim())) return true;
+    if (note.images && note.images.length > 0) return true;
+    if (note.audios && note.audios.length > 0) return true;
+    if (note.tags && note.tags.length > 0) return true;
+    return false;
+  }
+
+  // ✅ Snapshot → পরিবর্তন ছিল কি না দেখতে
+  function makeSnapshot(note) {
+    if (!note) return '';
+    try {
+      return JSON.stringify({
+        title: note.title || '',
+        text: note.text || '',
+        type: note.type || 'text',
+        checklist: note.checklist || [],
+        pinned: !!note.pinned,
+        locked: !!note.locked,
+        lockPin: note.lockPin || '',
+        tags: note.tags || [],
+        images: (note.images || []).length,
+        audios: (note.audios || []).length
+      });
+    } catch (e) { return ''; }
+  }
+
+  // ============================================================
+  // Save indicator UI
+  // ============================================================
+  function showSaveIndicator(state) {
+    const el = document.getElementById('neSaveIndicator');
+    if (!el) return;
+    if (saveIndicatorTimer) clearTimeout(saveIndicatorTimer);
+
+    if (state === 'saving') {
+      el.textContent = isEn ? 'Saving...' : 'সেভ হচ্ছে...';
+      el.classList.add('saving');
+      el.classList.remove('show');
+      // force reflow
+      void el.offsetWidth;
+      el.classList.add('show');
+    } else if (state === 'saved') {
+      el.textContent = isEn ? '✓ Saved' : '✓ সেভ হয়েছে';
+      el.classList.remove('saving');
+      el.classList.add('show');
+      saveIndicatorTimer = setTimeout(() => {
+        el.classList.remove('show');
+      }, 1500);
+    } else {
+      el.classList.remove('show', 'saving');
+    }
+  }
+
+  // ============================================================
+  // থিম
+  // ============================================================
+  function applyEditorBackground() {
+    const isDark = document.body.classList.contains('dark');
+    const isBlue = document.body.classList.contains('blue');
+    const editor = document.getElementById('noteEditor');
+    const titleEl = document.getElementById('neTitle');
+    const contentEl = document.getElementById('neContent');
+
+    let bg = '#fff', text = '#333';
+    if (isDark) { bg = '#1e161b'; text = '#eee'; }
+    else if (isBlue) { bg = '#0f172a'; text = '#e2e8f0'; }
+
+    if (editor) editor.style.background = bg;
+    if (titleEl) titleEl.style.color = text;
+    if (contentEl) contentEl.style.color = text;
+    document.querySelectorAll('.ne-check-input').forEach(inp => {
+      inp.style.color = text;
+    });
+  }
+
+  // ============================================================
+  // হেডার
+  // ============================================================
+  function updateHeaderIcons() {
+    const pinEl = document.getElementById('nePin');
+    const lockEl = document.getElementById('neLock');
+    if (pinEl) pinEl.textContent = editingNote.pinned ? '📌' : '📍';
+    if (lockEl) lockEl.textContent = editingNote.locked ? '🔒' : '🔓';
+  }
+
+  // ============================================================
+  // কনটেন্ট রেন্ডার
+  // ============================================================
+  function renderContentArea() {
+    const area = document.getElementById('neContentArea');
+    if (!area) return;
+    const n = editingNote;
+
+    if (n.type === 'checklist') {
+      const items = n.checklist || [];
+      area.innerHTML = `
+        <div class="ne-checklist" id="neChecklist">
+          ${items.map((it, i) => `
+            <div class="ne-check-row" data-idx="${i}">
+              <button class="ne-check-box ${it.done ? 'checked' : ''}" data-idx="${i}" type="button">${it.done ? '✓' : ''}</button>
+              <input type="text" class="ne-check-input ${it.done ? 'done' : ''}" data-idx="${i}" value="${escapeHtml(it.text || '')}" placeholder="${isEn ? 'List item...' : 'লিস্ট আইটেম...'}">
+              <button class="ne-check-del" data-idx="${i}" type="button">✕</button>
+            </div>
+          `).join('')}
+          <button class="ne-add-check" id="neAddCheck" type="button">+ ${isEn ? 'Add item' : 'আইটেম যোগ করো'}</button>
+        </div>
+      `;
+      bindChecklistEvents();
+    } else {
+      area.innerHTML = `<textarea class="ne-content" id="neContent" placeholder="${isEn ? 'Write something...' : 'কিছু লিখো...'}">${escapeHtml(n.text || '')}</textarea>`;
+      const ta = document.getElementById('neContent');
+      if (ta) {
+        ta.addEventListener('input', () => {
+          editingNote.text = ta.value;
+          autoResizeTA(ta);
+          scheduleAutoSave();
+        });
+        autoResizeTA(ta);
+      }
+    }
+    applyEditorBackground();
+  }
+
+  function autoResizeTA(ta) {
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(200, ta.scrollHeight) + 'px';
+  }
+
+  function bindChecklistEvents() {
+    const list = document.getElementById('neChecklist');
+    if (!list) return;
+
+    list.querySelectorAll('.ne-check-box').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = +btn.dataset.idx;
+        if (editingNote.checklist[idx]) {
+          editingNote.checklist[idx].done = !editingNote.checklist[idx].done;
+          renderContentArea();
+          scheduleAutoSave();
+        }
+      });
+    });
+
+    list.querySelectorAll('.ne-check-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = +inp.dataset.idx;
+        if (editingNote.checklist[idx]) {
+          editingNote.checklist[idx].text = inp.value;
+          scheduleAutoSave();
+        }
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const idx = +inp.dataset.idx;
+          editingNote.checklist.splice(idx + 1, 0, { text: '', done: false });
+          renderContentArea();
+          const inputs = document.querySelectorAll('.ne-check-input');
+          if (inputs[idx + 1]) {
+            inputs[idx + 1].focus();
+            setTimeout(() => inputs[idx + 1].scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+          }
+          scheduleAutoSave();
+        }
+      });
+    });
+
+    list.querySelectorAll('.ne-check-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = +btn.dataset.idx;
+        editingNote.checklist.splice(idx, 1);
+        renderContentArea();
+        scheduleAutoSave();
+      });
+    });
+
+    const addBtn = document.getElementById('neAddCheck');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        editingNote.checklist.push({ text: '', done: false });
+        renderContentArea();
+        const inputs = document.querySelectorAll('.ne-check-input');
+        if (inputs.length) {
+          const last = inputs[inputs.length - 1];
+          last.focus();
+          setTimeout(() => last.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+        }
+        scheduleAutoSave();
+      });
+    }
+  }
+
+  // ============================================================
+  // অ্যাটাচমেন্ট
+  // ============================================================
+  function renderAttachments() {
+    const wrap = document.getElementById('neAttach');
+    if (!wrap) return;
+
+    const imgs = pendingImages || [];
+    const auds = editingNote.audios || [];
+    let html = '';
+
+    imgs.forEach((src, i) => {
+      html += `
+        <div class="ne-attach-item">
+          <img src="${src}" class="ne-attach-img" alt="">
+          <button class="ne-attach-del" data-img="${i}" type="button">✕</button>
+        </div>
+      `;
+    });
+
+    auds.forEach((a, i) => {
+      html += `
+        <div class="ne-attach-item" style="position:relative;">
+          <div class="ne-attach-audio">
+            <audio controls src="${a.data}" style="max-width:160px; height:32px;"></audio>
+          </div>
+          <button class="ne-attach-del" data-aud="${i}" type="button">✕</button>
+        </div>
+      `;
+    });
+
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll('.ne-attach-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.img !== undefined) {
+          pendingImages.splice(+btn.dataset.img, 1);
+          editingNote.images = pendingImages;
+        } else if (btn.dataset.aud !== undefined) {
+          editingNote.audios.splice(+btn.dataset.aud, 1);
+        }
+        renderAttachments();
+        scheduleAutoSave();
+      });
+    });
+  }
+
+  // ============================================================
+  // AutoSave (Google Keep style)
+  // ============================================================
+  function scheduleAutoSave() {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      performAutoSave();
+    }, 400);
+  }
+
+  async function performAutoSave() {
+    if (isSaving) {
+      // আবার schedule করি
+      scheduleAutoSave();
+      return;
+    }
+    if (!editingNote) return;
+
+    const snapshot = makeSnapshot({
+      ...editingNote,
+      images: pendingImages,
+      audios: editingNote.audios || []
+    });
+
+    // কিছু পরিবর্তন হয়নি → save করার দরকার নেই
+    if (snapshot === lastSavedSnapshot) {
+      return;
+    }
+
+    // খালি note → save করব না, শুধু সময় বাঁচাই
+    if (!hasRealContent({
+      ...editingNote,
+      images: pendingImages
+    })) {
+      // খালি note → IndexedDB-তে save করব না (jhamela নয়)
+      // তবে lastSavedSnapshot আপডেট করি যাতে পরেরবার কাজ করে
+      lastSavedSnapshot = snapshot;
+      return;
+    }
+
+    isSaving = true;
+    showSaveIndicator('saving');
+
+    try {
+      editingNote.images = pendingImages;
+      editingNote.updatedAt = Date.now();
+      await saveNote(editingNote);
+      lastSavedSnapshot = snapshot;
+      showSaveIndicator('saved');
+    } catch (e) {
+      console.error('Auto-save failed:', e);
+      showSaveIndicator('');
+    } finally {
+      isSaving = false;
+    }
+  }
+
+  // ✅ immediate save (back/save বাটনে)
+  async function flushSave() {
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = null;
+    }
+    // already running হলে শেষ হওয়ার জন্য অপেক্ষা
+    if (isSaving) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+    await performAutoSave();
+    // একটু extra wait
+    if (isSaving) {
+      await new Promise(r => setTimeout(r, 200));
+    }
+  }
+
+  // ============================================================
+  // খালি note auto-delete (60 সেকেন্ড পর)
+  // ============================================================
+  let emptyNoteCleanupTimer = null;
+
+  function scheduleEmptyNoteCleanup() {
+    if (emptyNoteCleanupTimer) clearTimeout(emptyNoteCleanupTimer);
+    emptyNoteCleanupTimer = setTimeout(async () => {
+      // এখনো খালি?
+      if (!editingNote) return;
+      const isEmpty = !hasRealContent({
+        ...editingNote,
+        images: pendingImages
+      });
+      if (isEmpty) {
+        // IndexedDB-তে থাকলে মুছে ফেলি
+        try {
+          const existing = await getNote(editingNote.id);
+          if (existing) {
+            await deleteNoteDB(editingNote.id);
+          }
+        } catch (e) {}
+      }
+    }, 60 * 1000); // 60 সেকেন্ড
+  }
+
+  // ============================================================
+  // Back / Save
+  // ============================================================
+  async function goBackToList() {
+    if (hasRedirected) return;
+    hasRedirected = true;
+
+    // immediate save
+    await flushSave();
+
+    // খালি note হলে সাথে সাথে delete
+    if (editingNote) {
+      const isEmpty = !hasRealContent({
+        ...editingNote,
+        images: pendingImages
+      });
+      if (isEmpty) {
+        try {
+          const existing = await getNote(editingNote.id);
+          if (existing) await deleteNoteDB(editingNote.id);
+        } catch (e) {}
+      }
+    }
+
+    location.href = 'note.html';
+  }
+
+  // ============================================================
+  // এডিটর ইভেন্ট
+  // ============================================================
+  function bindEditorEvents() {
+    const titleEl = document.getElementById('neTitle');
+    if (titleEl) {
+      titleEl.addEventListener('input', (e) => {
+        editingNote.title = e.target.value;
+        scheduleAutoSave();
+      });
+    }
+
+    const backBtn = document.getElementById('neBack');
+    if (backBtn) {
+      backBtn.addEventListener('click', goBackToList);
+    }
+
+    const saveBtn = document.getElementById('neSave');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', goBackToList);
+    }
+
+    const pinBtn = document.getElementById('nePin');
+    if (pinBtn) {
+      pinBtn.addEventListener('click', () => {
+        editingNote.pinned = !editingNote.pinned;
+        updateHeaderIcons();
+        scheduleAutoSave();
+      });
+    }
+
+    const lockBtn = document.getElementById('neLock');
+    if (lockBtn) {
+      lockBtn.addEventListener('click', toggleNoteLock);
+    }
+
+    const moreBtn = document.getElementById('toolMore');
+    if (moreBtn) {
+      moreBtn.addEventListener('click', openMoreMenu);
+    }
+  }
+
+  // ============================================================
+  // থ্রি-ডট মেনু
+  // ============================================================
+  function openMoreMenu() {
+    const modal = document.createElement('div');
+    modal.className = 'ne-menu-modal';
+
+    const typeLabel = editingNote.type === 'checklist'
+      ? (isEn ? 'Switch to Text' : 'টেক্সট মোডে পরিবর্তন')
+      : (isEn ? 'Switch to Checklist' : 'চেকলিস্ট মোডে পরিবর্তন');
+
+    modal.innerHTML = `
+      <div class="ne-menu-content">
+        <button class="ne-menu-item" id="menuTag" type="button"><span>🏷️</span> ${isEn ? 'Tags' : 'ট্যাগ যোগ করুন'}</button>
+        <button class="ne-menu-item" id="menuImage" type="button"><span>📷</span> ${isEn ? 'Add Image' : 'ছবি যোগ করুন'}</button>
+        <button class="ne-menu-item" id="menuAudio" type="button"><span>🎤</span> ${isEn ? 'Voice Note' : 'ভয়েস নোট'}</button>
+        <button class="ne-menu-item" id="menuType" type="button"><span>${editingNote.type === 'checklist' ? '📄' : '✅'}</span> ${typeLabel}</button>
+        <button class="ne-menu-item" id="menuShare" type="button"><span>📤</span> ${isEn ? 'Share' : 'শেয়ার করুন'}</button>
+        <button class="ne-menu-item danger" id="menuDelete" type="button"><span>🗑️</span> ${isEn ? 'Delete' : 'ডিলিট করুন'}</button>
+        <button class="settings-btn-outline" style="margin-top:8px; width:100%;" id="menuClose" type="button">${isEn ? 'Close' : 'বন্ধ করুন'}</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('#menuTag').addEventListener('click', () => { modal.remove(); openTagEditor(); });
+    modal.querySelector('#menuImage').addEventListener('click', () => { modal.remove(); document.getElementById('neImageInput').click(); });
+    modal.querySelector('#menuAudio').addEventListener('click', () => { modal.remove(); openAudioRecorder(); });
+    modal.querySelector('#menuType').addEventListener('click', () => {
+      modal.remove();
+      if (editingNote.type === 'text') {
+        const txt = editingNote.text || '';
+        const lines = txt.split('\n').filter(l => l.trim());
+        editingNote.checklist = lines.length > 0
+          ? lines.map(l => ({ text: l, done: false }))
+          : [{ text: '', done: false }];
+        editingNote.type = 'checklist';
+        editingNote.text = '';
+      } else {
+        const txt = (editingNote.checklist || []).map(i => i.text).join('\n');
+        editingNote.text = txt;
+        editingNote.type = 'text';
+        editingNote.checklist = [];
+      }
+      renderContentArea();
+      scheduleAutoSave();
+    });
+    modal.querySelector('#menuShare').addEventListener('click', () => { modal.remove(); shareNote(); });
+    modal.querySelector('#menuDelete').addEventListener('click', () => { modal.remove(); confirmDeleteNote(); });
+    modal.querySelector('#menuClose').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  }
+
+  // ============================================================
+  // ট্যাগ
+  // ============================================================
+  function openTagEditor() {
+    const modal = document.createElement('div');
+    modal.className = 'ne-modal-overlay';
+    modal.innerHTML = `
+      <div class="ne-modal-card">
+        <h3>${isEn ? '🏷️ Tags' : '🏷️ ট্যাগ'}</h3>
+        <div class="ne-tag-list" id="neTagList"></div>
+        <div class="ne-tag-input-wrap">
+          <input type="text" class="ne-tag-input" id="neTagInput" placeholder="${isEn ? 'New tag...' : 'নতুন ট্যাগ...'}">
+          <button class="save-btn" style="width:auto; padding:0 16px; border-radius:10px; font-size:20px;" id="neTagAdd" type="button">+</button>
+        </div>
+        <button class="settings-btn-outline" style="margin-top:10px; width:100%;" id="neTagClose" type="button">${isEn ? 'Done' : 'সম্পন্ন'}</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    function renderTagList() {
+      const list = document.getElementById('neTagList');
+      list.innerHTML = (editingNote.tags || []).map((tg, i) => `
+        <span class="ne-tag-item">#${escapeHtml(tg)}<button class="ne-tag-remove" data-idx="${i}" type="button">✕</button></span>
+      `).join('') || `<span style="font-size:12px; color:#b8a0ac;">${isEn ? 'No tags yet' : 'এখনো কোনো ট্যাগ নেই'}</span>`;
+
+      list.querySelectorAll('.ne-tag-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          editingNote.tags.splice(+btn.dataset.idx, 1);
+          renderTagList();
+          scheduleAutoSave();
+        });
+      });
+    }
+
+    function addTag() {
+      const inp = document.getElementById('neTagInput');
+      const val = inp.value.trim().replace(/^#/, '').replace(/\s+/g, '-');
+      if (!val) return;
+      if (!editingNote.tags) editingNote.tags = [];
+      if (!editingNote.tags.includes(val)) {
+        editingNote.tags.push(val);
+      }
+      inp.value = '';
+      renderTagList();
+      scheduleAutoSave();
+      inp.focus();
+    }
+
+    renderTagList();
+    document.getElementById('neTagAdd').addEventListener('click', addTag);
+    document.getElementById('neTagInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addTag(); }
+    });
+    document.getElementById('neTagClose').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  }
+
+  // ============================================================
+  // ছবি আপলোড
+  // ============================================================
+  document.getElementById('neImageInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 1200;
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          const scale = maxDim / Math.max(w, h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        pendingImages.push(dataUrl);
+        editingNote.images = pendingImages;
+        renderAttachments();
+        scheduleAutoSave();
+      };
+      img.onerror = () => {
+        alert(isEn ? 'Failed to load image' : 'ছবি লোড করা যায়নি');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ============================================================
+  // ভয়েস রেকর্ডার
+  // ============================================================
+  async function openAudioRecorder() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert(isEn ? 'Your browser does not support recording' : 'তোমার ব্রাউজার রেকর্ডিং সাপোর্ট করে না');
+      return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'ne-modal-overlay';
+    modal.innerHTML = `
+      <div class="ne-modal-card" style="text-align:center;">
+        <h3>${isEn ? '🎤 Voice Note' : '🎤 ভয়েস নোট'}</h3>
+        <div style="font-size:40px; margin:14px 0;" id="recIcon">🎤</div>
+        <div style="font-size:13px; color:#a0808f; margin-bottom:8px;" id="recStatus">${isEn ? 'Tap to record (max 60s)' : 'রেকর্ড করতে ট্যাপ করো (সর্বোচ্চ ৬০ সেকেন্ড)'}</div>
+        <div style="font-size:22px; font-weight:700; color:var(--pink-main); margin-bottom:14px;" id="recTimer">00:00</div>
+        <div style="display:flex; gap:8px;">
+          <button class="settings-btn-outline" id="recCancel" type="button" style="flex:1;">${isEn ? 'Cancel' : 'বাতিল'}</button>
+          <button class="save-btn" id="recToggle" type="button" style="flex:1;">${isEn ? '🎤 Record' : '🎤 রেকর্ড'}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    let recording = false;
+    let seconds = 0;
+    let modalRemoved = false;
+
+    function cleanup() {
+      if (audioTimer) {
+        clearInterval(audioTimer);
+        audioTimer = null;
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.stop(); } catch (e) {}
+      }
+    }
+
+    function closeModal() {
+      if (modalRemoved) return;
+      modalRemoved = true;
+      cleanup();
+      modal.remove();
+    }
+
+    document.getElementById('recToggle').addEventListener('click', async () => {
+      if (!recording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            try {
+              const blob = new Blob(audioChunks, { type: 'audio/webm' });
+              const reader = new FileReader();
+              reader.onload = () => {
+                if (!editingNote.audios) editingNote.audios = [];
+                editingNote.audios.push({ data: reader.result, at: Date.now() });
+                renderAttachments();
+                scheduleAutoSave();
+              };
+              reader.readAsDataURL(blob);
+            } catch (e) {}
+            stream.getTracks().forEach(t => t.stop());
+          };
+
+          mediaRecorder.start();
+          recording = true;
+
+          const recToggle = document.getElementById('recToggle');
+          if (recToggle) recToggle.textContent = isEn ? '⏹ Stop' : '⏹ থামাও';
+          const recIcon = document.getElementById('recIcon');
+          if (recIcon) recIcon.textContent = '🔴';
+          const recStatus = document.getElementById('recStatus');
+          if (recStatus) recStatus.textContent = isEn ? 'Recording...' : 'রেকর্ডিং...';
+
+          seconds = 0;
+          audioTimer = setInterval(() => {
+            seconds++;
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            const recTimer = document.getElementById('recTimer');
+            if (recTimer) recTimer.textContent = `${m}:${s}`;
+            if (seconds >= 60) {
+              if (audioTimer) { clearInterval(audioTimer); audioTimer = null; }
+              if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+              }
+              recording = false;
+              setTimeout(closeModal, 300);
+            }
+          }, 1000);
+        } catch (err) {
+          alert(isEn ? 'Microphone permission denied' : 'মাইক্রোফোন অনুমতি পাওয়া যায়নি');
+          closeModal();
+        }
+      } else {
+        recording = false;
+        if (audioTimer) {
+          clearInterval(audioTimer);
+          audioTimer = null;
+        }
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        setTimeout(closeModal, 300);
+      }
+    });
+
+    document.getElementById('recCancel').addEventListener('click', () => {
+      closeModal();
+    });
+  }
+
+  // ============================================================
+  // নোট লক
+  // ============================================================
+  function toggleNoteLock() {
+    if (!editingNote.locked) {
+      const pin = prompt(isEn ? 'Set a PIN for this note (4+ chars):' : 'এই নোটের জন্য পিন সেট করো (৪+ অক্ষর):');
+      if (!pin || pin.length < 4) return;
+      editingNote.locked = true;
+      editingNote.lockPin = safeEncode(pin);
+      updateHeaderIcons();
+      scheduleAutoSave();
+    } else {
+      const pin = prompt(isEn ? 'Enter current PIN to unlock:' : 'আনলক করতে বর্তমান পিন দাও:');
+      if (pin && safeEncode(pin) === editingNote.lockPin) {
+        editingNote.locked = false;
+        editingNote.lockPin = '';
+        updateHeaderIcons();
+        scheduleAutoSave();
+      } else {
+        alert(isEn ? 'Wrong PIN ❌' : 'ভুল পিন ❌');
+      }
+    }
+  }
+
+  // ============================================================
+  // শেয়ার
+  // ============================================================
+  function shareNote() {
+    const n = editingNote;
+    let text = (n.title ? n.title + '\n\n' : '');
+    if (n.type === 'checklist') {
+      text += (n.checklist || []).map(i => `${i.done ? '☑' : '☐'} ${i.text}`).join('\n');
+    } else {
+      text += n.text || '';
+    }
+
+    if (!text.trim()) {
+      alert(isEn ? 'Nothing to share' : 'শেয়ার করার জন্য কিছু নেই');
+      return;
+    }
+
+    if (navigator.share) {
+      navigator.share({
+        title: n.title || (isEn ? 'Note' : 'নোট'),
+        text: text
+      }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(isEn ? 'Copied to clipboard ✅' : 'ক্লিপবোর্ডে কপি হয়েছে ✅');
+      }).catch(() => {});
+    }
+  }
+
+  // ============================================================
+  // ডিলিট
+  // ============================================================
+  async function confirmDeleteNote() {
+    if (!confirm(isEn ? 'Move to recycle bin?' : 'রিসাইকেল বিনে পাঠাতে চাও?')) return;
+
+    const n = editingNote;
+    let bin = [];
+    try {
+      bin = JSON.parse(localStorage.getItem('recycleBin')) || [];
+      if (!Array.isArray(bin)) bin = [];
+    } catch (e) { bin = []; }
+
+    bin.push({
+      id: 'bin_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type: 'note',
+      text: n.title || (isEn ? 'Untitled note' : 'নামহীন নোট'),
+      data: n,
+      deletedAt: Date.now()
+    });
+    localStorage.setItem('recycleBin', JSON.stringify(bin));
+
+    try {
+      await deleteNoteDB(n.id);
+    } catch (e) { console.error(e); }
+    goBackToList();
+  }
+
+  // ============================================================
+  // Lifecycle: tab বন্ধ / visibility
+  // ============================================================
+  window.addEventListener('beforeunload', () => {
+    // synchronous নয়, তবে keepalive save try করি
+    try {
+      if (editingNote && hasRealContent({
+        ...editingNote,
+        images: pendingImages
+      })) {
+        editingNote.images = pendingImages;
+        editingNote.updatedAt = Date.now();
+        // IndexedDB sync হয় না, তবে blocking না করার চেষ্টা
+        saveNote(editingNote).catch(() => {});
+      }
+    } catch (e) {}
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      // immediate save
+      if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = null;
+      }
+      performAutoSave();
+    }
+  });
+
+  // ============================================================
+  // ইনিশিয়ালাইজ
+  // ============================================================
+  async function init() {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+
+    let existingNote = null;
+    if (id) {
+      try {
+        existingNote = await getNote(id);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (existingNote) {
+      editingNote = existingNote;
+      pendingImages = [...(existingNote.images || [])];
+    } else {
+      // ✅ নতুন নোট → সাথেই IndexedDB-তে save (Google Keep style)
+      editingNote = createNewNote();
+      pendingImages = [];
+      try {
+        await saveNote(editingNote);
+        lastSavedSnapshot = makeSnapshot(editingNote);
+      } catch (e) {}
+    }
+
+    if (!editingNote.audios) editingNote.audios = [];
+    if (!editingNote.tags) editingNote.tags = [];
+    if (!editingNote.checklist) editingNote.checklist = [];
+
+    if (!lastSavedSnapshot) {
+      lastSavedSnapshot = makeSnapshot({
+        ...editingNote,
+        images: pendingImages
+      });
+    }
+
+    const titleEl = document.getElementById('neTitle');
+    if (titleEl) titleEl.value = editingNote.title || '';
+
+    updateHeaderIcons();
+    renderContentArea();
+    renderAttachments();
+    bindEditorEvents();
+
+    applyEditorBackground();
+
+    // ✅ 60 সেকেন্ড পর খালি থাকলে auto-delete
+    scheduleEmptyNoteCleanup();
+  }
+
+  init();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

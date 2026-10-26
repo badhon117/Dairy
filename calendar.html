@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ক্যালেন্ডার 📅</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e0568a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  /* ✅ Tap-friendly calendar day */
+  .cal-day {
+    min-height: 42px;
+    font-size: 14px;
+    position: relative;
+    touch-action: manipulation;
+  }
+
+  /* ✅ Entry count badge */
+  .entry-count-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 7px;
+    background: var(--pink-main, #e0568a);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  body.dark .entry-count-badge { background: #ff9bb6; color: #1e161b; }
+  body.blue .entry-count-badge { background: #60a5fa; color: #0f172a; }
+
+  /* ✅ Selected + Today একসাথে */
+  .cal-day.selected {
+    background: var(--pink-main);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(224, 86, 138, 0.35);
+  }
+  .cal-day.selected .entry-count-badge {
+    background: #fff;
+    color: var(--pink-main);
+  }
+  .cal-day.today.selected {
+    background: var(--pink-main);
+    color: #fff;
+  }
+
+  /* ✅ Disabled nav buttons (future limit) */
+  .cal-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* ✅ Empty entry message better */
+  .empty {
+    text-align: center;
+    color: var(--pink-dark);
+    padding: 30px 20px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ✅ Entry-actions on calendar modal */
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    justify-content: flex-end;
+  }
+  .modal-actions button {
+    border: none;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .modal-actions button:active { transform: scale(0.96); }
+
+  /* ✅ "Go to today" ফ্লোটিং বাটন */
+  .goto-today-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--pink-main, #e0568a);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(224, 86, 138, 0.4);
+    z-index: 90;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    transition: 0.2s;
+  }
+  .goto-today-btn.show { display: flex; }
+  .goto-today-btn:active { transform: scale(0.95); }
+
+  /* ✅ Selected date badge */
+  .date-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--pink-soft);
+    color: var(--pink-main);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">ক্যালেন্ডার 📅</h1>
+      <div class="date" id="calSubtitle">দিনে ট্যাপ করে দেখো</div>
+    </div>
+  </div>
+
+  <div class="cal-nav">
+    <button class="cal-nav-btn" id="prevMonth" type="button">‹</button>
+    <div class="cal-month" id="monthLabel"></div>
+    <button class="cal-nav-btn" id="nextMonth" type="button">›</button>
+  </div>
+
+  <div class="cal-weekdays" id="weekdays">
+    <span>রবি</span><span>সোম</span><span>মঙ্গল</span><span>বুধ</span><span>বৃহঃ</span><span>শুক্র</span><span>শনি</span>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+
+  <div class="section-title" id="selectedDateTitle">📖 এই দিনের এন্ট্রি</div>
+  <div id="dayEntries"></div>
+
+  <button class="goto-today-btn" id="gotoTodayBtn" type="button">
+    📍 <span id="gotoTodayText">আজ</span>
+  </button>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  const STORAGE_KEY = 'pinkDiaryEntries';
+  const SELECTED_DATE_KEY = 'calSelectedDate';
+
+  // ============================================================
+  // Utility
+  // ============================================================
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function getEntries() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Load entries failed:', e);
+      return [];
+    }
+  }
+
+  function dateKey(d) {
+    // ✅ Local date (UTC নয়) — DST safe
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function entryDateKey(iso) {
+    try {
+      return dateKey(new Date(iso));
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function getEntryDaysMap() {
+    const map = {};
+    getEntries().forEach(e => {
+      const k = entryDateKey(e.time);
+      if (k) map[k] = (map[k] || 0) + 1;
+    });
+    return map;
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  let currentMonth = new Date();
+  currentMonth.setDate(1);
+
+  let selectedDateKey = '';
+
+  // Saved selected date restore
+  try {
+    const saved = localStorage.getItem(SELECTED_DATE_KEY);
+    if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
+      selectedDateKey = saved;
+      const savedDate = new Date(saved + 'T00:00:00');
+      if (!isNaN(savedDate.getTime())) {
+        currentMonth = new Date(savedDate.getFullYear(), savedDate.getMonth(), 1);
+      }
+    }
+  } catch (e) {}
+
+  // ============================================================
+  // ভাষা / পেজ
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) pageTitle.textContent = window.Lang.calendarTitle();
+
+    const sub = document.getElementById('calSubtitle');
+    if (sub) sub.textContent = window.Lang.calSubtitle();
+
+    const weekdays = document.getElementById('weekdays');
+    if (weekdays) {
+      const en = isEn();
+      const names = en
+        ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        : ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
+      weekdays.innerHTML = names.map(n => `<span>${n}</span>`).join('');
+    }
+
+    const title = document.getElementById('selectedDateTitle');
+    if (title && !title.dataset.hasDate) {
+      title.textContent = window.Lang.calEntriesTitle();
+    }
+
+    const gotoText = document.getElementById('gotoTodayText');
+    if (gotoText) gotoText.textContent = isEn() ? 'Today' : 'আজ';
+
+    document.title = window.Lang.calendarTitle();
+  }
+
+  // ============================================================
+  // Calendar render
+  // ============================================================
+  function renderCalendar() {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const en = isEn();
+
+    // Month label
+    const monthLabel = document.getElementById('monthLabel');
+    if (monthLabel) {
+      monthLabel.textContent = currentMonth.toLocaleDateString(
+        en ? 'en-US' : 'bn-BD',
+        { month: 'long', year: 'numeric' }
+      );
+    }
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const entryMap = getEntryDaysMap();
+    const todayKey = dateKey(new Date());
+
+    let html = '';
+
+    // Previous month trailing days
+    for (let i = firstDay - 1; i >= 0; i--) {
+      html += `<div class="cal-day other-month">${daysInPrevMonth - i}</div>`;
+    }
+
+    // Current month
+    for (let d = 1; d <= daysInMonth; d++) {
+      const thisKey = dateKey(new Date(year, month, d));
+      const count = entryMap[thisKey] || 0;
+      const isToday = thisKey === todayKey;
+      const isSelected = thisKey === selectedDateKey;
+      const classes = ['cal-day'];
+      if (isToday) classes.push('today');
+      if (count > 0) classes.push('has-entry');
+      if (isSelected) classes.push('selected');
+
+      let badge = '';
+      if (count > 0) {
+        badge = count > 1
+          ? `<span class="entry-count-badge">${count}</span>`
+          : `<span class="entry-dot"></span>`;
+      }
+
+      html += `<div class="${classes.join(' ')}" data-key="${thisKey}">${d}${badge}</div>`;
+    }
+
+    // Next month leading days
+    const total = firstDay + daysInMonth;
+    const remaining = (7 - (total % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      html += `<div class="cal-day other-month">${i}</div>`;
+    }
+
+    const grid = document.getElementById('calGrid');
+    if (!grid) return;
+    grid.innerHTML = html;
+
+    // ✅ Event delegation (বারবার bind নয়)
+    grid.querySelectorAll('.cal-day[data-key]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const key = cell.dataset.key;
+        selectDate(key);
+      });
+    });
+
+    // ✅ "Go to today" বাটন show/hide
+    updateGotoTodayBtn();
+
+    // ✅ Selected date auto-show
+    if (selectedDateKey) {
+      const selDate = new Date(selectedDateKey + 'T00:00:00');
+      if (!isNaN(selDate.getTime()) &&
+          selDate.getMonth() === month &&
+          selDate.getFullYear() === year) {
+        showDayEntries(selectedDateKey);
+      } else {
+        // অন্য মাসের selected → empty দিয়ে reset
+        const dayEntries = document.getElementById('dayEntries');
+        if (dayEntries) dayEntries.innerHTML = '';
+        const title = document.getElementById('selectedDateTitle');
+        if (title) {
+          title.textContent = window.Lang ? window.Lang.calEntriesTitle() : '📖 এই দিনের এন্ট্রি';
+          delete title.dataset.hasDate;
+        }
+      }
+    }
+  }
+
+  function selectDate(key) {
+    selectedDateKey = key;
+    try {
+      localStorage.setItem(SELECTED_DATE_KEY, key);
+    } catch (e) {}
+
+    // Highlight update (re-render না করে)
+    document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('selected'));
+    const cell = document.querySelector(`.cal-day[data-key="${key}"]`);
+    if (cell) cell.classList.add('selected');
+
+    showDayEntries(key);
+  }
+
+  function showDayEntries(key) {
+    const entries = getEntries().filter(e => entryDateKey(e.time) === key);
+    const title = document.getElementById('selectedDateTitle');
+    const list = document.getElementById('dayEntries');
+    if (!title || !list) return;
+
+    const en = isEn();
+    const displayDate = new Date(key + 'T00:00:00').toLocaleDateString(
+      en ? 'en-US' : 'bn-BD',
+      { day: 'numeric', month: 'long', year: 'numeric' }
+    );
+
+    title.textContent = `📖 ${displayDate}`;
+    title.dataset.hasDate = 'true';
+
+    if (entries.length === 0) {
+      const emptyMsg = window.Lang ? window.Lang.emptyCal() :
+        (en ? 'No entries on this day.' : 'এই দিনে কোনো এন্ট্রি নেই।');
+      list.innerHTML = `<div class="empty"><span style="font-size:40px; display:block; margin-bottom:8px;">🌷</span>${emptyMsg}</div>`;
+      return;
+    }
+
+    // Sort by time (newest first)
+    const sorted = entries.slice().sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    list.innerHTML = sorted.map(e => `
+      <div class="entry" data-entry-id="${escapeHtml(e.id)}">
+        <div class="entry-top">
+          <div class="entry-date">${new Date(e.time).toLocaleTimeString(
+            en ? 'en-US' : 'bn-BD',
+            { hour: '2-digit', minute: '2-digit' }
+          )}</div>
+          <div class="entry-mood">${e.mood || ''}</div>
+        </div>
+        <div class="entry-text">${escapeHtml(e.text)}</div>
+      </div>
+    `).join('');
+
+    // Event listeners
+    list.querySelectorAll('.entry').forEach(entryEl => {
+      entryEl.addEventListener('click', () => {
+        openEntry(entryEl.dataset.entryId);
+      });
+    });
+  }
+
+  // ============================================================
+  // Entry modal
+  // ============================================================
+  function openEntry(id) {
+    const entry = getEntries().find(e => e.id === id);
+    if (!entry) return;
+
+    const old = document.getElementById('entryModal');
+    if (old) old.remove();
+
+    const en = isEn();
+    const editTxt = en ? '✏️ Edit' : '✏️ এডিট';
+    const closeTxt = en ? 'Close' : 'বন্ধ';
+
+    const modal = document.createElement('div');
+    modal.className = 'entry-modal';
+    modal.id = 'entryModal';
+    modal.innerHTML = `
+      <div class="entry-modal-content">
+        <div class="modal-top">
+          <div class="modal-date">
+            ${new Date(entry.time).toLocaleDateString(en ? 'en-US' : 'bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })} • 
+            ${new Date(entry.time).toLocaleTimeString(en ? 'en-US' : 'bn-BD', { hour: '2-digit', minute: '2-digit' })}
+          </div>
+          <div class="modal-mood">${entry.mood || ''}</div>
+          <button class="modal-close" type="button" data-action="close">✕</button>
+        </div>
+        <div class="modal-text">${escapeHtml(entry.text)}</div>
+        <div class="modal-actions">
+          <button class="modal-edit" type="button" data-action="edit">${editTxt}</button>
+          <button class="modal-close-btn" type="button" data-action="close" style="background:var(--pink-soft); color:var(--pink-main);">${closeTxt}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelectorAll('[data-action="close"]').forEach(btn => {
+      btn.addEventListener('click', closeEntry);
+    });
+    modal.querySelector('[data-action="edit"]').addEventListener('click', () => {
+      closeEntry();
+      location.href = 'diary.html?edit=' + encodeURIComponent(id);
+    });
+    modal.addEventListener('click', (ev) => {
+      if (ev.target === modal) closeEntry();
+    });
+  }
+
+  function closeEntry() {
+    const m = document.getElementById('entryModal');
+    if (m) m.remove();
+  }
+
+  // ============================================================
+  // Navigation
+  // ============================================================
+  function updateNavButtons() {
+    const now = new Date();
+    const currentYM = currentMonth.getFullYear() * 12 + currentMonth.getMonth();
+    const maxYM = now.getFullYear() * 12 + now.getMonth();
+
+    const prevBtn = document.getElementById('prevMonth');
+    const nextBtn = document.getElementById('nextMonth');
+
+    // সর্বোচ্চ ২৪ মাস পিছনে
+    if (prevBtn) {
+      const minYM = (now.getFullYear() - 5) * 12 + now.getMonth();
+      prevBtn.disabled = currentYM <= minYM;
+    }
+
+    // ভবিষ্যতে যাওয়া বন্ধ
+    if (nextBtn) {
+      nextBtn.disabled = currentYM >= maxYM;
+    }
+  }
+
+  function updateGotoTodayBtn() {
+    const btn = document.getElementById('gotoTodayBtn');
+    if (!btn) return;
+    const now = new Date();
+    const isCurrentMonth =
+      currentMonth.getFullYear() === now.getFullYear() &&
+      currentMonth.getMonth() === now.getMonth();
+    const todayKey = dateKey(now);
+    const isTodaySelected = selectedDateKey === todayKey;
+    btn.classList.toggle('show', !isCurrentMonth || !isTodaySelected);
+  }
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updatePageTexts();
+  renderCalendar();
+  updateNavButtons();
+
+  // Prev / Next
+  const prevBtn = document.getElementById('prevMonth');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      currentMonth.setMonth(currentMonth.getMonth() - 1);
+      renderCalendar();
+      updateNavButtons();
+    });
+  }
+
+  const nextBtn = document.getElementById('nextMonth');
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentMonth.setMonth(currentMonth.getMonth() + 1);
+      renderCalendar();
+      updateNavButtons();
+    });
+  }
+
+  // Goto Today
+  const gotoBtn = document.getElementById('gotoTodayBtn');
+  if (gotoBtn) {
+    gotoBtn.addEventListener('click', () => {
+      const now = new Date();
+      currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      selectedDateKey = dateKey(now);
+      try { localStorage.setItem(SELECTED_DATE_KEY, selectedDateKey); } catch (e) {}
+      renderCalendar();
+      updateNavButtons();
+      // Scroll to grid
+      const grid = document.getElementById('calGrid');
+      if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  // ============================================================
+  // ✅ pageshow → ফিরে এলে রিফ্রেশ
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      // ভাষা বদলেছে?
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updatePageTexts();
+      renderCalendar();
+      updateNavButtons();
+    }
+  });
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

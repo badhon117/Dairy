@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>অ্যাপ সম্পর্কে</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  /* ============================================================
+     About পেজের বিশেষ স্টাইল — সব থিমে কাজ করে
+     ============================================================ */
+
+  body.pro-page {
+    background: var(--card-bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+  }
+
+  .pro-container {
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--card-bg);
+  }
+
+  /* হেডার */
+  .pro-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .pro-back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--pink-light);
+    color: var(--pink-main);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.15s;
+  }
+  .pro-back-btn:active {
+    background: var(--pink-soft);
+    transform: scale(0.95);
+  }
+  .pro-header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  /* Hero */
+  .pro-hero {
+    text-align: center;
+    padding: 40px 20px 32px;
+    background: linear-gradient(180deg, var(--pink-light) 0%, var(--card-bg) 100%);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .pro-app-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
+    margin: 0 auto 20px;
+    display: block;
+    box-shadow: 0 12px 32px var(--card-shadow);
+    background: var(--pink-light);
+    object-fit: cover;
+  }
+  .pro-app-icon-fallback {
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    box-shadow: 0 12px 32px var(--card-shadow);
+    background: linear-gradient(135deg, var(--pink-soft), var(--pink-light));
+  }
+  .pro-app-name {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+  }
+  .pro-app-tagline {
+    font-size: 15px;
+    color: var(--pink-dark);
+    margin: 0 0 16px 0;
+    font-weight: 500;
+  }
+  .pro-app-version {
+    display: inline-block;
+    padding: 5px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pink-dark);
+  }
+
+  /* সেকশন */
+  .pro-section {
+    padding: 28px 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .pro-section:last-child {
+    border-bottom: none;
+  }
+  .pro-section-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pro-section-title::before {
+    content: '';
+    width: 4px;
+    height: 18px;
+    background: var(--pink-main);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* স্টোরি */
+  .pro-story-text {
+    font-size: 14.5px;
+    line-height: 1.8;
+    color: var(--pink-dark);
+    margin: 0;
+    white-space: pre-line;
+  }
+
+  /* ফিচার গ্রিড */
+  .pro-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .pro-feature-card {
+    background: var(--pink-light);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 6px;
+    text-align: center;
+    transition: 0.15s;
+  }
+  .pro-feature-card:active {
+    transform: scale(0.97);
+  }
+  .pro-feature-icon {
+    font-size: 22px;
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+  .pro-feature-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pink-dark);
+    line-height: 1.3;
+  }
+
+  /* প্রাইভেসি */
+  .pro-privacy-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .pro-privacy-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    color: var(--pink-dark);
+    line-height: 1.5;
+  }
+  .pro-privacy-item:last-child {
+    border-bottom: none;
+  }
+  .pro-privacy-check {
+    width: 22px;
+    height: 22px;
+    background: #d4f5e0;
+    color: #28a745;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  body.dark .pro-privacy-check {
+    background: #20402d;
+    color: #6ddf98;
+  }
+  body.blue .pro-privacy-check {
+    background: #14532d;
+    color: #86efac;
+  }
+
+  /* টেক চিপস */
+  .pro-tech-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pro-tech-chip {
+    padding: 6px 14px;
+    background: var(--pink-light);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pink-dark);
+  }
+
+  /* টিম */
+  .pro-team-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pro-team-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    background: var(--pink-light);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    transition: 0.15s;
+  }
+  .pro-team-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+  .pro-team-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+  }
+  .pro-team-avatar.emoji {
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--pink-main), var(--pink-dark));
+    color: #fff;
+    border: none;
+  }
+  .pro-team-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .pro-team-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 2px 0;
+  }
+  .pro-team-role {
+    font-size: 12px;
+    color: var(--pink-dark);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  /* ভার্সন */
+  .pro-version-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .pro-version-item:last-child {
+    border-bottom: none;
+  }
+  .pro-version-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .pro-version-tag {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .pro-version-badge {
+    padding: 2px 8px;
+    background: var(--pink-main);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .pro-version-date {
+    font-size: 12px;
+    color: var(--pink-mid);
+  }
+  .pro-version-notes {
+    font-size: 13px;
+    color: var(--pink-dark);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* অ্যাকশন */
+  .pro-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 28px 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .pro-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+  .pro-btn-primary {
+    background: var(--pink-main);
+    color: #fff;
+    box-shadow: 0 4px 12px var(--card-shadow);
+  }
+  .pro-btn-primary:active {
+    transform: scale(0.98);
+  }
+  .pro-btn-secondary {
+    background: var(--pink-light);
+    color: var(--pink-dark);
+    border: 1px solid var(--border-color);
+  }
+  .pro-btn-secondary:active {
+    background: var(--card-bg);
+    border-color: var(--pink-main);
+    color: var(--pink-main);
+    transform: scale(0.98);
+  }
+
+  /* ফুটার */
+  .pro-footer {
+    padding: 28px 20px 40px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--pink-mid);
+    line-height: 1.7;
+  }
+  .pro-footer-heart {
+    color: var(--pink-main);
+    font-size: 14px;
+  }
+
+  /* Blue থিমে gradient */
+  body.blue.pro-page {
+    background: #0f172a;
+  }
+  body.blue.pro-page .pro-container {
+    background: #0f172a;
+  }
+  body.blue.pro-page .pro-header {
+    background: #1e293b;
+    border-bottom-color: #334155;
+  }
+  body.blue.pro-page .pro-hero {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+  }
+  body.blue.pro-page .pro-app-icon {
+    background: #334155;
+  }
+
+  /* Dark থিমে gradient */
+  body.dark.pro-page {
+    background: #1e161b;
+  }
+  body.dark.pro-page .pro-container {
+    background: #1e161b;
+  }
+  body.dark.pro-page .pro-header {
+    background: #1e161b;
+    border-bottom-color: #3a2a33;
+  }
+  body.dark.pro-page .pro-hero {
+    background: linear-gradient(180deg, #2a1f26 0%, #1e161b 100%);
+    border-color: #3a2a33;
+  }
+  body.dark.pro-page .pro-app-icon {
+    background: #2f2329;
+  }
+</style>
+</head>
+<body class="pro-page">
+<div class="pro-container">
+
+  <div class="pro-header">
+    <button class="pro-back-btn" onclick="location.href='index.html'" type="button">←</button>
+    <div class="pro-header-title" id="aboutTitle">অ্যাপ সম্পর্কে</div>
+  </div>
+
+  <div class="pro-hero" id="heroContainer">
+    <!-- Icon + Title + Tagline injected by JS -->
+  </div>
+
+  <div class="pro-section">
+    <h2 class="pro-section-title" id="storyTitle">📖 অ্যাপের গল্প</h2>
+    <p class="pro-story-text" id="storyText"></p>
+  </div>
+
+  <div class="pro-section">
+    <h2 class="pro-section-title" id="featuresTitle">✨ ফিচার</h2>
+    <div class="pro-feature-grid" id="featureGrid"></div>
+  </div>
+
+  <div class="pro-section">
+    <h2 class="pro-section-title" id="privacyTitle">🔒 তোমার গোপনীয়তা</h2>
+    <ul class="pro-privacy-list" id="privacyList"></ul>
+  </div>
+
+  <div class="pro-section">
+    <h2 class="pro-section-title" id="techTitle">🛠️ টেকনোলজি</h2>
+    <div class="pro-tech-chips">
+      <span class="pro-tech-chip">HTML5</span>
+      <span class="pro-tech-chip">CSS3</span>
+      <span class="pro-tech-chip">JavaScript</span>
+      <span class="pro-tech-chip">PWA</span>
+      <span class="pro-tech-chip">IndexedDB</span>
+      <span class="pro-tech-chip">LocalStorage</span>
+    </div>
+  </div>
+
+  <div class="pro-section">
+    <h2 class="pro-section-title" id="teamTitle">👥 আমাদের টিম</h2>
+    <div class="pro-team-list" id="teamList"></div>
+  </div>
+
+  <div class="pro-section">
+    <h2 class="pro-section-title" id="historyTitle">📜 সংস্করণ ইতিহাস</h2>
+    <div id="versionList"></div>
+  </div>
+
+  <div class="pro-actions">
+    <a href="feedback.html" class="pro-btn pro-btn-primary" id="btnFeedback" style="text-decoration:none;">
+      💬 ফিডব্যাক দাও
+    </a>
+    <a href="faq.html" class="pro-btn pro-btn-secondary" id="btnFaq" style="text-decoration:none;">
+      ❓ সাহায্য / FAQ
+    </a>
+  </div>
+
+  <div class="pro-footer">
+    <div id="footerCopyright">© ২০২৬ ডায়েরি</div>
+    <div><span class="pro-footer-heart">❤️</span> <span id="footerMadeWith">তৈরি হয়েছে ভালোবাসা দিয়ে</span></div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // Team data
+  // ============================================================
+  const TEAM = [
+    {
+      name: 'Nishat Hossain Badhon',
+      emoji: '👨‍💻',
+      img: null,
+      roleKey: 'aboutRoleDeveloper'
+    },
+    {
+      name: 'DeepSeek',
+      emoji: '🤖',
+      img: 'deepseek-logo.png',
+      roleKey: 'aboutRoleAI'
+    },
+    {
+      name: 'Gemini',
+      emoji: '✨',
+      img: 'gemini-logo.png',
+      roleKey: 'aboutRoleAI'
+    }
+  ];
+
+  // ============================================================
+  // Versions data
+  // ============================================================
+  const VERSIONS = [
+    {
+      tag: 'v1.0.0',
+      date_bn: '২০২৬',
+      date_en: '2026',
+      current: true,
+      notesKey: 'aboutVersionNotes'
+    }
+  ];
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updateTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    // হেডার
+    setText('aboutTitle', window.Lang.aboutTitle());
+
+    // Hero
+    renderHero();
+
+    // Sections
+    setText('storyTitle', window.Lang.aboutStoryTitle());
+    setText('storyText', window.Lang.aboutStoryText());
+    setText('featuresTitle', window.Lang.aboutFeaturesTitle());
+    setText('privacyTitle', window.Lang.aboutPrivacyTitle());
+    setText('techTitle', window.Lang.aboutTechTitle());
+    setText('teamTitle', window.Lang.aboutTeamTitle());
+    setText('historyTitle', window.Lang.aboutHistoryTitle());
+
+    // বাটন ও ফুটার
+    setText('btnFeedback', window.Lang.aboutBtnFeedback());
+    setText('btnFaq', window.Lang.aboutBtnFaq());
+    setText('footerCopyright', window.Lang.aboutFooterCopyright());
+    setText('footerMadeWith', window.Lang.aboutFooterMadeWith());
+
+    // ফিচার গ্রিড
+    renderFeatures();
+
+    // প্রাইভেসি
+    renderPrivacy();
+
+    // টিম
+    renderTeam();
+
+    // ভার্সন
+    renderVersions();
+
+    document.title = window.Lang.aboutTitle() + ' 🌸';
+  }
+
+  // ============================================================
+  // Hero (icon + name + tagline + version)
+  // ============================================================
+  function renderHero() {
+    const hero = document.getElementById('heroContainer');
+    if (!hero) return;
+
+    hero.innerHTML = `
+      <img src="icon-192.png" alt="App Icon" class="pro-app-icon" id="appIconEl">
+      <h1 class="pro-app-name" id="appName">${escapeHtml(window.Lang.aboutAppName())}</h1>
+      <p class="pro-app-tagline" id="appTagline">${escapeHtml(window.Lang.aboutTagline())}</p>
+      <span class="pro-app-version" id="appVersion">${escapeHtml(window.Lang.aboutVersion())}</span>
+    `;
+
+    // Icon error fallback
+    const img = document.getElementById('appIconEl');
+    if (img) {
+      img.addEventListener('error', () => {
+        const fallback = document.createElement('div');
+        fallback.className = 'pro-app-icon-fallback';
+        fallback.textContent = '🌸';
+        img.replaceWith(fallback);
+      });
+    }
+  }
+
+  // ============================================================
+  // Features
+  // ============================================================
+  function renderFeatures() {
+    const features = [
+      { icon: '📖', key: 'aboutFeatDiary' },
+      { icon: '📅', key: 'aboutFeatCalendar' },
+      { icon: '📝', key: 'aboutFeatTodo' },
+      { icon: '⏱️', key: 'aboutFeatPomodoro' },
+      { icon: '💭', key: 'aboutFeatMood' },
+      { icon: '📝', key: 'aboutFeatNotes' },
+      { icon: '🎵', key: 'aboutFeatMusic' },
+      { icon: '🗓️', key: 'aboutFeatRoutine' },
+      { icon: '🔒', key: 'aboutFeatLock' }
+    ];
+
+    const featureGrid = document.getElementById('featureGrid');
+    if (!featureGrid) return;
+
+    featureGrid.innerHTML = features.map(f => {
+      const name = window.Lang[f.key] ? window.Lang[f.key]() : '';
+      return `
+        <div class="pro-feature-card">
+          <div class="pro-feature-icon">${f.icon}</div>
+          <div class="pro-feature-name">${escapeHtml(name)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ============================================================
+  // Privacy
+  // ============================================================
+  function renderPrivacy() {
+    const privacyKeys = [
+      'aboutPrivacy1',
+      'aboutPrivacy2',
+      'aboutPrivacy3',
+      'aboutPrivacy4',
+      'aboutPrivacy5'
+    ];
+
+    const privacyList = document.getElementById('privacyList');
+    if (!privacyList) return;
+
+    privacyList.innerHTML = privacyKeys.map(key => {
+      const txt = window.Lang[key] ? window.Lang[key]() : '';
+      return `
+        <li class="pro-privacy-item">
+          <span class="pro-privacy-check">✓</span>
+          <span>${escapeHtml(txt)}</span>
+        </li>
+      `;
+    }).join('');
+  }
+
+  // ============================================================
+  // Team
+  // ============================================================
+  function renderTeam() {
+    const list = document.getElementById('teamList');
+    if (!list) return;
+
+    list.innerHTML = TEAM.map(member => {
+      const role = window.Lang[member.roleKey] ? window.Lang[member.roleKey]() : '';
+      const avatarHtml = member.img
+        ? `<div class="pro-team-avatar" data-has-img="1">
+             <img src="${escapeHtml(member.img)}" alt="${escapeHtml(member.name)}" data-member="${escapeHtml(member.name)}">
+           </div>`
+        : `<div class="pro-team-avatar emoji">${member.emoji}</div>`;
+
+      return `
+        <div class="pro-team-card">
+          ${avatarHtml}
+          <div class="pro-team-info">
+            <div class="pro-team-name">${escapeHtml(member.name)}</div>
+            <div class="pro-team-role">${escapeHtml(role)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Image error fallback
+    list.querySelectorAll('img[data-member]').forEach(img => {
+      img.addEventListener('error', () => {
+        const parent = img.parentElement;
+        if (!parent) return;
+        const memberName = img.dataset.member;
+        const member = TEAM.find(t => t.name === memberName);
+        if (member) {
+          parent.classList.add('emoji');
+          parent.innerHTML = member.emoji;
+        }
+      });
+    });
+  }
+
+  // ============================================================
+  // Versions
+  // ============================================================
+  function renderVersions() {
+    const container = document.getElementById('versionList');
+    if (!container) return;
+
+    const en = isEn();
+    const badgeText = window.Lang.aboutVersionBadge ? window.Lang.aboutVersionBadge() : (en ? 'Current' : 'বর্তমান');
+
+    container.innerHTML = VERSIONS.map(v => {
+      const dateText = en ? v.date_en : v.date_bn;
+      const notes = window.Lang[v.notesKey] ? window.Lang[v.notesKey]() : '';
+      return `
+        <div class="pro-version-item">
+          <div class="pro-version-header">
+            <span class="pro-version-tag">${escapeHtml(v.tag)}</span>
+            ${v.current ? `<span class="pro-version-badge">${escapeHtml(badgeText)}</span>` : ''}
+            <span class="pro-version-date">${escapeHtml(dateText)}</span>
+          </div>
+          <p class="pro-version-notes">${escapeHtml(notes)}</p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updateTexts();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updateTexts();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

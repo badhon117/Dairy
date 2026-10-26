@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#e0568a">
+<title>রিসাইকেল বিন ♻️</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  .bin-hero-section {
+    background: linear-gradient(135deg, var(--pink-main), var(--pink-dark));
+    padding: 30px 20px 30px;
+    border-radius: 30px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+  body.blue .bin-hero-section {
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    color: #0f172a;
+  }
+  .bin-hero-title {
+    font-size: 22px; font-weight: 800; margin-bottom: 10px; letter-spacing: 0.5px;
+  }
+  .bin-hero-subtitle {
+    font-size: 14px; opacity: 0.9; margin-bottom: 24px; line-height: 1.5;
+  }
+  .bin-search-box {
+    width: 100%; padding: 15px 20px 15px 45px; border: none;
+    border-radius: 12px; font-size: 15px; font-family: inherit;
+    background: #ffffff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%2364748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 16px center;
+    color: #1E293B;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: 0.2s;
+  }
+  .bin-search-box:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+  }
+  .bin-categories {
+    display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 15px;
+    margin-top: -15px; position: relative; z-index: 10; scrollbar-width: none;
+  }
+  .bin-categories::-webkit-scrollbar { display: none; }
+  .bin-cat-btn {
+    padding: 8px 16px; border-radius: 20px;
+    background: var(--card-bg); border: 1px solid var(--border-color);
+    font-size: 13.5px; font-weight: 600;
+    color: var(--pink-dark); white-space: nowrap; cursor: pointer;
+    font-family: inherit; transition: 0.2s;
+    box-shadow: 0 2px 6px var(--card-shadow);
+  }
+  .bin-cat-btn.active {
+    background: var(--pink-main); color: white;
+    border-color: var(--pink-main);
+    box-shadow: 0 2px 8px rgba(224, 86, 138, 0.3);
+  }
+  .bin-group { margin-bottom: 24px; }
+  .bin-group-title {
+    font-size: 15px; font-weight: 800; color: var(--pink-main);
+    margin-bottom: 12px; padding-left: 8px;
+    border-left: 4px solid var(--pink-main);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .bin-card {
+    background: var(--card-bg); border-radius: 16px;
+    box-shadow: 0 2px 12px var(--card-shadow);
+    overflow: hidden; border: 1px solid var(--border-color);
+  }
+  .bin-item {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+    padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px;
+  }
+  .bin-item:last-child { border-bottom: none; }
+  .bin-info { flex: 1; min-width: 0; padding-right: 10px; }
+  .bin-title {
+    font-size: 14.5px; font-weight: 600; color: var(--text);
+    margin-bottom: 4px; line-height: 1.4;
+    word-break: break-word;
+  }
+  .bin-date {
+    font-size: 12px; color: var(--pink-dark);
+  }
+  .bin-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .bin-btn {
+    border: none; padding: 8px 12px; border-radius: 10px;
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; transition: 0.2s;
+  }
+  .bin-btn:active { transform: scale(0.95); }
+  .btn-restore { background: #e6f7ed; color: #2e8b57; }
+  .btn-delete { background: #ffe0e6; color: #d63a5f; }
+  body.dark .btn-restore { background: #20402d; color: #6ddf98; }
+  body.dark .btn-delete { background: #4a1c26; color: #ff8fa8; }
+  body.blue .btn-restore { background: #14532d; color: #86efac; }
+  body.blue .btn-delete { background: #451a03; color: #f87171; }
+  .no-results {
+    text-align: center; padding: 40px 20px; color: var(--pink-dark);
+    display: none;
+  }
+  .no-results .icon { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+  .no-results.show { display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">রিসাইকেল বিন ♻️</h1>
+      <div class="date" id="pageSubtitle">মুছে ফেলা জিনিসপত্র</div>
+    </div>
+  </div>
+
+  <div class="bin-hero-section">
+    <div class="bin-hero-title" id="heroTitle">মুছে ফেলা জিনিসপত্র</div>
+    <div class="bin-hero-subtitle" id="heroSubtitle">ভুলে ডিলিট হয়ে গেলে এখান থেকে ফিরিয়ে আনতে পারেন</div>
+    <input type="text" class="bin-search-box" id="binSearch" placeholder="যেকোনো লেখা দিয়ে খুঁজুন...">
+  </div>
+
+  <div class="bin-categories" id="catContainer">
+    <button class="bin-cat-btn active" data-cat="all" type="button" id="catAll">সবগুলো</button>
+    <button class="bin-cat-btn" data-cat="diary" type="button" id="catDiary">📖 দিনলিপি</button>
+    <button class="bin-cat-btn" data-cat="todo" type="button" id="catTodo">📝 টুডু লিস্ট</button>
+    <button class="bin-cat-btn" data-cat="project" type="button" id="catProject">📁 প্রজেক্টস</button>
+    <button class="bin-cat-btn" data-cat="note" type="button" id="catNote">📝 নোট</button>
+  </div>
+
+  <div id="binContent"></div>
+
+  <div class="no-results" id="noResults">
+    <div class="icon">🍃</div>
+    <p id="noResultsText">কোনো মুছে ফেলা জিনিস পাওয়া যায়নি।</p>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // IndexedDB
+  // ============================================================
+  const DB_NAME = 'pinkDiaryNotesDB';
+  const DB_VERSION = 2;
+  const STORE = 'notes';
+
+  function openNotesDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(STORE)) {
+          const store = database.createObjectStore(STORE, { keyPath: 'id' });
+          store.createIndex('updatedAt', 'updatedAt');
+          store.createIndex('pinned', 'pinned');
+        }
+      };
+      req.onsuccess = (e) => resolve(e.target.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function putNoteInDB(note) {
+    const database = await openNotesDB();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).put(note);
+      req.onsuccess = () => { database.close(); resolve(true); };
+      req.onerror = () => { database.close(); reject(req.error); };
+      tx.onerror = () => { database.close(); reject(tx.error); };
+    });
+  }
+
+  async function noteExistsInDB(id) {
+    const database = await openNotesDB();
+    return new Promise((resolve) => {
+      const tx = database.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(id);
+      req.onsuccess = () => { database.close(); resolve(!!req.result); };
+      req.onerror = () => { database.close(); resolve(false); };
+    });
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  let currentCategory = 'all';
+  let searchQuery = '';
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('pageTitle', window.Lang.recycleTitle());
+    setText('pageSubtitle', window.Lang.recycleSubtitle());
+    setText('heroTitle', window.Lang.recycleHeroTitle());
+    setText('heroSubtitle', window.Lang.recycleHeroSub());
+    setText('catAll', window.Lang.recycleCatAll());
+    setText('catDiary', window.Lang.recycleCatDiary());
+    setText('catTodo', window.Lang.recycleCatTodo());
+    setText('catProject', window.Lang.recycleCatProject());
+    setText('catNote', window.Lang.recycleCatNote());
+
+    const searchBox = document.getElementById('binSearch');
+    if (searchBox) searchBox.placeholder = window.Lang.recycleSearchPlaceholder();
+
+    document.title = window.Lang.recycleTitle();
+  }
+
+  // ============================================================
+  // Cleanup (30 দিনের বেশি হলে মুছে ফেলি)
+  // ============================================================
+  function cleanupBin() {
+    let bin;
+    try {
+      bin = JSON.parse(localStorage.getItem('recycleBin')) || [];
+      if (!Array.isArray(bin)) bin = [];
+    } catch (e) { bin = []; }
+
+    const now = Date.now();
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    const filtered = bin.filter(item => item && item.deletedAt && (now - item.deletedAt) < thirtyDays);
+
+    // শুধু update করি যদি কিছু মুছে ফেলা হয়
+    if (filtered.length !== bin.length) {
+      try {
+        localStorage.setItem('recycleBin', JSON.stringify(filtered));
+      } catch (e) {
+        console.error('Cleanup save failed:', e);
+      }
+    }
+    return filtered;
+  }
+
+  function getBin() {
+    try {
+      const bin = JSON.parse(localStorage.getItem('recycleBin')) || [];
+      return Array.isArray(bin) ? bin : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveBin(bin) {
+    try {
+      localStorage.setItem('recycleBin', JSON.stringify(bin));
+      return true;
+    } catch (e) {
+      console.error('Save bin failed:', e);
+      return false;
+    }
+  }
+
+  // ============================================================
+  // Render
+  // ============================================================
+  function renderBin() {
+    const bin = cleanupBin();
+    const container = document.getElementById('binContent');
+    const noResults = document.getElementById('noResults');
+    const noResultsText = document.getElementById('noResultsText');
+    if (!container || !noResults) return;
+
+    // ✅ খালি check — search info আগে reset
+    if (bin.length === 0) {
+      container.innerHTML = '';
+      noResults.classList.add('show');
+      if (noResultsText) {
+        noResultsText.textContent = isEn() ? 'Recycle bin is empty!' : 'রিসাইকেল বিন খালি!';
+      }
+      return;
+    }
+
+    // Group by type
+    const groups = {
+      'diary': { name: isEn() ? '📖 Diary' : '📖 দিনলিপি', items: [] },
+      'todo': { name: isEn() ? '📝 Todo List' : '📝 টুডু লিস্ট', items: [] },
+      'project': { name: isEn() ? '📁 Projects' : '📁 প্রজেক্টস', items: [] },
+      'note': { name: isEn() ? '📝 Notes' : '📝 নোট', items: [] }
+    };
+
+    bin.forEach(item => {
+      if (item && groups[item.type]) {
+        groups[item.type].items.push(item);
+      }
+    });
+
+    const delLabel = isEn() ? 'Deleted:' : 'ডিলিট:';
+    const restoreTxt = isEn() ? '↩️ Restore' : '↩️ ফেরাও';
+    const deleteTxt = isEn() ? '✕ Delete' : '✕ মুছো';
+
+    let html = '';
+    Object.keys(groups).forEach(key => {
+      if (groups[key].items.length > 0) {
+        html += `<div class="bin-group" data-category="${key}">
+          <div class="bin-group-title">${groups[key].name}</div>
+          <div class="bin-card">
+            ${groups[key].items.map(item => `
+              <div class="bin-item" data-search="${escapeHtml(String(item.text || '').toLowerCase())}">
+                <div class="bin-info">
+                  <div class="bin-title">${escapeHtml(item.text || '')}</div>
+                  <div class="bin-date">${delLabel} ${new Date(item.deletedAt).toLocaleDateString(isEn() ? 'en-US' : 'bn-BD')}</div>
+                </div>
+                <div class="bin-actions">
+                  <button class="bin-btn btn-restore" data-action="restore" data-id="${escapeHtml(item.id)}" type="button">${restoreTxt}</button>
+                  <button class="bin-btn btn-delete" data-action="permdelete" data-id="${escapeHtml(item.id)}" type="button">${deleteTxt}</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }
+    });
+
+    container.innerHTML = html;
+
+    // Event listeners
+    container.querySelectorAll('[data-action="restore"]').forEach(btn => {
+      btn.addEventListener('click', () => restoreItem(btn.dataset.id));
+    });
+    container.querySelectorAll('[data-action="permdelete"]').forEach(btn => {
+      btn.addEventListener('click', () => permDelete(btn.dataset.id));
+    });
+
+    applyFilters();
+  }
+
+  // ============================================================
+  // Filter
+  // ============================================================
+  function applyFilters() {
+    const groups = document.querySelectorAll('.bin-group');
+    const noResults = document.getElementById('noResults');
+    const noResultsText = document.getElementById('noResultsText');
+    let visibleCount = 0;
+
+    groups.forEach(group => {
+      const groupCat = group.dataset.category;
+      const items = group.querySelectorAll('.bin-item');
+      let groupHasVisibleItems = false;
+
+      items.forEach(item => {
+        const textMatch = (item.dataset.search || '').includes(searchQuery);
+        const matchCategory = (currentCategory === 'all' || groupCat === currentCategory);
+
+        if (matchCategory && textMatch) {
+          item.style.display = 'flex';
+          groupHasVisibleItems = true;
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      group.style.display = groupHasVisibleItems ? 'block' : 'none';
+    });
+
+    if (visibleCount === 0) {
+      noResults.classList.add('show');
+      if (noResultsText) {
+        noResultsText.textContent = isEn()
+          ? 'No deleted items found.'
+          : 'কোনো মুছে ফেলা জিনিস পাওয়া যায়নি।';
+      }
+    } else {
+      noResults.classList.remove('show');
+    }
+  }
+
+  function filterCategory(cat) {
+    currentCategory = cat;
+    document.querySelectorAll('.bin-cat-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.cat === cat);
+    });
+    applyFilters();
+  }
+
+  function filterBin() {
+    const input = document.getElementById('binSearch');
+    if (!input) return;
+    searchQuery = input.value.toLowerCase().trim();
+    applyFilters();
+  }
+
+  // ============================================================
+  // Restore
+  // ============================================================
+  async function restoreItem(id) {
+    const bin = getBin();
+    const item = bin.find(x => x.id === id);
+    if (!item) return;
+
+    try {
+      if (item.type === 'diary') {
+        const data = JSON.parse(localStorage.getItem('pinkDiaryEntries')) || [];
+        const arr = Array.isArray(data) ? data : [];
+        arr.push(item.data);
+        localStorage.setItem('pinkDiaryEntries', JSON.stringify(arr));
+        removeFromBin(id);
+
+      } else if (item.type === 'todo') {
+        const data = JSON.parse(localStorage.getItem('pinkDiaryTodos')) || [];
+        const arr = Array.isArray(data) ? data : [];
+        arr.push(item.data);
+        localStorage.setItem('pinkDiaryTodos', JSON.stringify(arr));
+        removeFromBin(id);
+
+      } else if (item.type === 'project') {
+        const data = JSON.parse(localStorage.getItem('pomoProjects')) || [];
+        const arr = Array.isArray(data) ? data : [];
+        // ✅ duplicate id guard
+        if (!arr.some(p => String(p.id) === String(item.data.id))) {
+          arr.push(item.data);
+          localStorage.setItem('pomoProjects', JSON.stringify(arr));
+        }
+        removeFromBin(id);
+
+      } else if (item.type === 'note') {
+        // ✅ ID conflict check (একই id already থাকলে নতুন id দাও)
+        let noteToRestore = { ...item.data };
+        const exists = await noteExistsInDB(noteToRestore.id);
+        if (exists) {
+          noteToRestore.id = Date.now().toString() + '_' + Math.random().toString(36).slice(2, 7);
+        }
+        await putNoteInDB(noteToRestore);
+        removeFromBin(id);
+      }
+
+    } catch (e) {
+      console.error('Restore failed:', e);
+      alert(isEn() ? 'Failed to restore item ❌' : 'আইটেম ফেরানো যায়নি ❌');
+    }
+  }
+
+  function removeFromBin(id) {
+    let bin = getBin();
+    bin = bin.filter(x => x.id !== id);
+    saveBin(bin);
+    renderBin();
+  }
+
+  // ============================================================
+  // Permanent delete
+  // ============================================================
+  function permDelete(id) {
+    const confirmMsg = isEn()
+      ? 'Do you really want to delete this permanently? It cannot be recovered!'
+      : 'এটি একদম মুছে ফেলতে চান? আর ফেরত পাওয়া যাবে না!';
+    if (!confirm(confirmMsg)) return;
+
+    let bin = getBin();
+    bin = bin.filter(x => x.id !== id);
+    saveBin(bin);
+    renderBin();
+  }
+
+  // ============================================================
+  // Event bindings
+  // ============================================================
+  document.querySelectorAll('.bin-cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => filterCategory(btn.dataset.cat));
+  });
+
+  const searchInput = document.getElementById('binSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', filterBin);
+  }
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updatePageTexts();
+      renderBin();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updatePageTexts();
+  renderBin();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

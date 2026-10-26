@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#e0568a">
+<title>সাহায্য / FAQ ❓</title>
+<link rel="stylesheet" href="style.css">
+<script src="language.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  .faq-hero {
+    background: var(--pink-main);
+    border-radius: 20px;
+    padding: 24px 20px;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px var(--card-shadow);
+  }
+  body.blue .faq-hero {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: #0f172a;
+  }
+  .faq-hero h2 {
+    font-size: 20px; font-weight: 700; margin-bottom: 8px;
+  }
+  .faq-hero p {
+    font-size: 13px; opacity: 0.9; margin-bottom: 16px;
+  }
+
+  .faq-search-wrap {
+    position: relative;
+  }
+  .faq-search-box {
+    width: 100%; padding: 14px 42px 14px 42px;
+    border: none; border-radius: 12px; font-size: 14px;
+    font-family: inherit; outline: none;
+    background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%23e0568a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 14px center;
+    color: #333;
+  }
+  .faq-search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: #ffe4ec;
+    color: var(--pink-main);
+    font-size: 13px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+  .faq-search-clear.show { display: flex; }
+  .faq-search-clear:active { transform: translateY(-50%) scale(0.9); }
+
+  .faq-categories {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding-bottom: 15px; margin-bottom: 10px;
+    scrollbar-width: none;
+  }
+  .faq-categories::-webkit-scrollbar { display: none; }
+
+  .faq-cat-btn {
+    padding: 8px 14px; border-radius: 20px;
+    background: var(--card-bg); border: 1px solid var(--border-color);
+    font-size: 13px; font-weight: 600; color: var(--pink-dark);
+    white-space: nowrap; cursor: pointer; font-family: inherit;
+    transition: 0.2s; box-shadow: 0 2px 6px var(--card-shadow);
+  }
+  .faq-cat-btn.active {
+    background: var(--pink-main); color: #fff;
+    border-color: var(--pink-main);
+  }
+
+  .faq-group { margin-bottom: 24px; }
+  .faq-group-title {
+    font-size: 15px; font-weight: 800; color: var(--pink-main);
+    margin-bottom: 12px; padding-left: 8px;
+    border-left: 4px solid var(--pink-main);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .faq-card {
+    background: var(--card-bg); border-radius: 16px;
+    box-shadow: 0 4px 15px var(--card-shadow);
+    overflow: hidden; border: 1px solid var(--border-color);
+  }
+
+  .faq-item { border-bottom: 1px solid var(--border-color); transition: background 0.2s; }
+  .faq-item:last-child { border-bottom: none; }
+
+  .faq-question {
+    padding: 16px; font-size: 14.5px; font-weight: 600;
+    color: var(--text); cursor: pointer;
+    display: flex; justify-content: space-between;
+    align-items: center; line-height: 1.5;
+    gap: 10px;
+  }
+  .faq-question.active {
+    color: var(--pink-main); background: var(--pink-light);
+  }
+  .faq-icon {
+    font-size: 14px; color: var(--pink-dark);
+    transition: transform 0.3s; flex-shrink: 0;
+  }
+  .faq-question.active .faq-icon {
+    transform: rotate(180deg); color: var(--pink-main);
+  }
+
+  .faq-answer {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.35s ease-out;
+    background: var(--pink-light);
+  }
+  .faq-answer-content {
+    padding: 14px 16px; font-size: 14px; color: var(--text);
+    line-height: 1.7; border-top: 1px dashed var(--border-color);
+  }
+  .faq-answer.open { max-height: 2000px; }
+
+  .no-results {
+    text-align: center; padding: 40px 20px;
+    color: var(--pink-dark); display: none;
+  }
+  .no-results.show { display: block; }
+  .no-results .icon { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="page-header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div>
+      <h1 id="pageTitle">সাহায্য / FAQ ❓</h1>
+      <div class="date" id="pageSubtitle">প্রশ্ন-উত্তর ও গাইড</div>
+    </div>
+  </div>
+
+  <div class="faq-hero">
+    <h2 id="heroTitle">আপনার কী জানা দরকার?</h2>
+    <p id="heroSub">অ্যাপটি ব্যবহারের নিয়মাবলী সম্পর্কে এখানে বিস্তারিত পাবেন</p>
+    <div class="faq-search-wrap">
+      <input type="text" class="faq-search-box" id="faqSearch" placeholder="যেকোনো প্রশ্ন বা শব্দ দিয়ে খুঁজুন...">
+      <button class="faq-search-clear" id="faqSearchClear" type="button">✕</button>
+    </div>
+  </div>
+
+  <div class="faq-categories" id="catContainer"></div>
+
+  <div class="screen" id="faqContent"></div>
+
+  <div class="no-results" id="noResults">
+    <div class="icon">🔍</div>
+    <p id="noResultsText">দুঃখিত, আপনার খোঁজা প্রশ্নটি পাওয়া যায়নি।</p>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // সিকিউরিটি
+  // ============================================================
+  (function() {
+    const pw = localStorage.getItem('pinkDiaryPassword');
+    if (pw && sessionStorage.getItem('diaryUnlocked') !== 'true') {
+      location.href = 'index.html';
+    }
+  })();
+
+  function isEn() {
+    return window.Lang ? window.Lang.lang() === 'en' : false;
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============================================================
+  // FAQ Data
+  // ============================================================
+  const FAQ_DATA = [
+    {
+      id: 'basic',
+      bnTitle: '📱 সাধারণ ব্যবহার',
+      enTitle: '📱 Basic Usage',
+      items: [
+        {
+          bnQ: 'ডায়েরিতে নতুন এন্ট্রি কীভাবে যোগ করব?',
+          enQ: 'How do I add a new diary entry?',
+          bnA: 'দিনলিপি পেজে যান, বড় টেক্সট বক্সে আপনার মনের কথা লিখুন, পছন্দের মুড (ইমোজি) বেছে নিন এবং "সেভ করো" বাটনে ক্লিক করুন।',
+          enA: 'Go to the Diary page, write your thoughts in the large text box, select a mood (emoji), and click the "Save" button.'
+        },
+        {
+          bnQ: 'নোট কীভাবে তৈরি করব?',
+          enQ: 'How do I create a note?',
+          bnA: 'নোট পেজে গিয়ে "+ নতুন নোট" বাটনে ক্লিক করুন। সেখানে টাইটেল, টেক্সট, চেকলিস্ট, ছবি বা ভয়েস যোগ করতে পারবেন।',
+          enA: 'Go to the Notes page and click "+ New Note". There you can add a title, text, checklist, image, or voice.'
+        },
+        {
+          bnQ: 'টুডু লিস্টে কাজ কীভাবে যোগ করব?',
+          enQ: 'How do I add a task to the Todo List?',
+          bnA: 'টুডু লিস্ট পেজে কাজের নাম ও তারিখ লিখে "+" বাটনে ক্লিক করুন। কাজ শেষ হলে বৃত্তে ক্লিক করে টিক দিন।',
+          enA: 'On the Todo List page, enter the task name and date, then click the "+" button. When done, click the circle to mark it.'
+        },
+        {
+          bnQ: 'মুড ট্র্যাকার কীভাবে কাজ করে?',
+          enQ: 'How does the Mood Tracker work?',
+          bnA: 'আপনি দিনলিপিতে যে মুড দিবেন, তা এখানে স্বয়ংক্রিয়ভাবে জমা হবে। মাস অনুযায়ী আপনার predominant মুড ও পরিসংখ্যান দেখতে পাবেন।',
+          enA: 'The moods you set in your diary are automatically collected here. You can see your predominant mood and statistics by month.'
+        },
+        {
+          bnQ: 'ক্যালেন্ডারে কেন কিছু দিনে ডট দেখা যায়?',
+          enQ: 'Why do some days have dots on the calendar?',
+          bnA: 'যেসব দিনে আপনি দিনলিপিতে কিছু লিখেছেন, সেই দিনগুলোর নিচে একটি ছোট ডট দেখা যাবে।',
+          enA: 'Days on which you have written a diary entry will show a small dot beneath them.'
+        },
+        {
+          bnQ: 'অ্যাপের ফন্ট সাইজ কি পরিবর্তন করা যায়?',
+          enQ: 'Can I change the app\'s font size?',
+          bnA: 'হ্যাঁ, আপনার ফোনের Settings > Display > Font Size থেকে পরিবর্তন করলে পুরো অ্যাপে প্রভাব পড়বে।',
+          enA: 'Yes, changing your phone\'s Settings > Display > Font Size will affect the whole app.'
+        }
+      ]
+    },
+    {
+      id: 'data',
+      bnTitle: '☁️ ডেটা ও ব্যাকআপ',
+      enTitle: '☁️ Data & Backup',
+      items: [
+        {
+          bnQ: 'আমার ডেটা কি ইন্টারনেট ছাড়া কাজ করবে?',
+          enQ: 'Will my data work without internet?',
+          bnA: 'হ্যাঁ, সম্পূর্ণভাবে! আপনার সব ডেটা ফোনের ভেতরেই সেভ থাকে। ইন্টারনেট ছাড়াই সব কাজ করবে।',
+          enA: 'Yes, absolutely! All your data is saved inside your phone. Everything works without internet.'
+        },
+        {
+          bnQ: 'ব্যাকআপ ও রিস্টোর কীভাবে করব?',
+          enQ: 'How do I backup and restore?',
+          bnA: 'সেটিংস > ডেটা সেকশনে যান। "ব্যাকআপ ডাউনলোড" এ ক্লিক করলে একটি JSON ফাইল সেভ হবে। ভবিষ্যতে "ব্যাকআপ আপলোড" করে তা ফিরিয়ে আনতে পারবেন।',
+          enA: 'Go to Settings > Data section. Click "Download Backup" to save a JSON file. Later, you can restore it using "Upload Backup".'
+        },
+        {
+          bnQ: 'অ্যাপের ডেটা কি অন্য কারো সাথে শেয়ার হয়?',
+          enQ: 'Is my data shared with anyone else?',
+          bnA: 'না, আপনার তথ্য সম্পূর্ণ গোপন। অ্যাপটি কোনো থার্ড-পার্টি সার্ভারে ডেটা পাঠায় না।',
+          enA: 'No, your information is completely private. The app does not send data to any third-party server.'
+        },
+        {
+          bnQ: 'সব ডেটা কীভাবে মুছে ফেলব?',
+          enQ: 'How do I delete all data?',
+          bnA: 'সেটিংসের একদম নিচে "সব এন্ট্রি মুছে ফেলো" বাটনে ক্লিক করে নিশ্চিত করলে সব ডেটা (নোট, ডায়েরি, রুটিন, মিউজিক) মুছে যাবে।',
+          enA: 'Go to the bottom of Settings, click "Delete all entries" and confirm to delete everything (notes, diary, routines, music).'
+        }
+      ]
+    },
+    {
+      id: 'music',
+      bnTitle: '🎵 মিউজিক প্লেয়ার',
+      enTitle: '🎵 Music Player',
+      items: [
+        {
+          bnQ: 'মিউজিক পেজে গান কীভাবে যোগ করব?',
+          enQ: 'How do I add songs to the Music page?',
+          bnA: 'মিউজিক পেজে গিয়ে "+ যোগ করো" বাটনে ক্লিক করুন। সেখান থেকে ফোনের যেকোনো অডিও ফাইল সিলেক্ট করে "যোগ করো" চাপুন।',
+          enA: 'Go to the Music page and click "+ Add". Select any audio file from your phone and click "Add".'
+        },
+        {
+          bnQ: 'গান চালু রেখে অন্য পেজে গেলে কী হবে?',
+          enQ: 'What happens if I go to another page while music is playing?',
+          bnA: 'গান বাজতে থাকবে। স্ক্রিনের বাম দিকে ছোট 🎵 আইকনে ক্লিক করে যেকোনো পেজ থেকেই গান কন্ট্রোল করতে পারবেন।',
+          enA: 'The music will keep playing. You can control it from any page by clicking the small 🎵 icon on the left.'
+        },
+        {
+          bnQ: 'গানের স্পিড কীভাবে বাড়াব বা কমাব?',
+          enQ: 'How do I increase or decrease song speed?',
+          bnA: 'মিউজিক পেজে "এখন বাজছে" কার্ডে 1.0x লেখা বাটনে ক্লিক করলে স্পিড পরিবর্তন হবে।',
+          enA: 'On the Music page, click the button showing "1.0x" in the "Now Playing" card to change the speed.'
+        },
+        {
+          bnQ: 'গান পজ করে অন্য পেজে গেলে আবার নিজে থেকে বাজে কেন?',
+          enQ: 'Why does the song auto-play when I go to another page after pausing?',
+          bnA: 'আমরা এটি ফিক্স করেছি। এখন গান পজ থাকলে অন্য পেজে গেলেও পজই থাকবে। আপনাকে নিজে প্লে চাপতে হবে।',
+          enA: 'We have fixed this. Now, if paused, it will stay paused when you go to another page. You have to press play yourself.'
+        }
+      ]
+    },
+    {
+      id: 'pomodoro',
+      bnTitle: '⏱️ পোমোডোরো ও রুটিন',
+      enTitle: '⏱️ Pomodoro & Routine',
+      items: [
+        {
+          bnQ: 'পোমোডোরো টাইমার কীভাবে সেট করব?',
+          enQ: 'How do I set the Pomodoro timer?',
+          bnA: 'প্রজেক্ট পেজে "+ নতুন প্রজেক্ট" এ ক্লিক করুন। ফোকাস টাইম, রাউন্ড ও ব্রেক সেট করে সেভ করুন। তারপর প্রজেক্টে ক্লিক করলে টাইমার শুরু হবে।',
+          enA: 'On the Projects page, click "+ New Project". Set focus time, rounds, and break, then save. Click the project to start the timer.'
+        },
+        {
+          bnQ: 'রুটিন তৈরি করে কীভাবে সেভ করব?',
+          enQ: 'How do I create and save a routine?',
+          bnA: 'রুটিন পেজে "+ নতুন রুটিন" এ ক্লিক করুন। নাম, দিন ও টাইম স্লট সেট করে "সেভ" করুন।',
+          enA: 'On the Routine page, click "+ New Routine". Set the name, days, and time slots, then "Save".'
+        },
+        {
+          bnQ: 'রুটিন PDF বা ছবি হিসেবে ডাউনলোড করা যাবে?',
+          enQ: 'Can I download the routine as PDF or Image?',
+          bnA: 'হ্যাঁ, রুটিন ভিউ পেজে "PDF ডাউনলোড", "CSV ডাউনলোড" এবং "ছবি ডাউনলোড" বাটন আছে।',
+          enA: 'Yes, the routine view page has "PDF Download", "CSV Download", and "Image Download" buttons.'
+        }
+      ]
+    },
+    {
+      id: 'lock',
+      bnTitle: '🔒 সিকিউরিটি (লক)',
+      enTitle: '🔒 Security (Lock)',
+      items: [
+        {
+          bnQ: 'অ্যাপ লক (পিন/প্যাটার্ন) কীভাবে চালু করব?',
+          enQ: 'How do I enable App Lock (PIN/Pattern)?',
+          bnA: 'সেটিংসে যান, "পাসওয়ার্ড লক" চালু করুন। এরপর পিন অথবা প্যাটার্ন সেট করুন।',
+          enA: 'Go to Settings and enable "Password Lock". Then set a PIN or Pattern.'
+        },
+        {
+          bnQ: 'পিন বা প্যাটার্ন ভুলে গেলে কী করব?',
+          enQ: 'What if I forget my PIN or Pattern?',
+          bnA: 'লক স্ক্রিনে "পাসওয়ার্ড ভুলে গেছি?" বাটনে ক্লিক করুন। এটি আপনার সব ডেটা রিসেট করবে (ডেটা মুছে যাবে)।',
+          enA: 'On the lock screen, click "Forgot password?". This will reset all your data (data will be erased).'
+        },
+        {
+          bnQ: 'একটি নির্দিষ্ট নোট কীভাবে লক করব?',
+          enQ: 'How do I lock a specific note?',
+          bnA: 'নোট এডিটরে ঢুকে উপরের 🔓 (লক) আইকনে ক্লিক করুন এবং একটি পিন সেট করুন।',
+          enA: 'Open the note editor, click the 🔓 (lock) icon at the top, and set a PIN.'
+        }
+      ]
+    },
+    {
+      id: 'troubleshoot',
+      bnTitle: '🛠️ সমস্যা ও সমাধান',
+      enTitle: '🛠️ Troubleshoot',
+      items: [
+        {
+          bnQ: 'নোট সেভ হচ্ছে না কেন?',
+          enQ: 'Why is my note not saving?',
+          bnA: 'হতে পারে ডেটাবেস লোড হতে সমস্যা হচ্ছে। পেজটি একবার রিফ্রেশ (F5) দিন অথবা ব্রাউজারের ক্যাশে ক্লিয়ার করুন।',
+          enA: 'There may be an issue loading the database. Refresh the page (F5) or clear your browser cache.'
+        },
+        {
+          bnQ: 'অ্যাপ আপডেট করলে আমার ডেটা মুছে যাবে?',
+          enQ: 'Will my data be deleted if I update the app?',
+          bnA: 'না, ডেটা মুছবে না। যতক্ষণ আপনি ব্রাউজারের ডেটা বা ক্যাশে ক্লিয়ার করবেন না, ততক্ষণ সব নিরাপদ থাকবে।',
+          enA: 'No, your data will not be deleted. As long as you don\'t clear your browser data or cache, everything remains safe.'
+        },
+        {
+          bnQ: 'মিউজিক উইজেটের গানের নাম দেখা যাচ্ছে না কেন?',
+          enQ: 'Why is the song name not showing in the music widget?',
+          bnA: 'আমরা এটি ফিক্স করেছি। যদি এখনো সমস্যা হয়, তবে পেজটি একবার রিফ্রেশ করুন।',
+          enA: 'We have fixed this. If the issue still occurs, refresh the page.'
+        },
+        {
+          bnQ: 'সব ডেটা মুছে ফেলার পরও পুরনো ডেটা দেখা যায় কেন?',
+          enQ: 'Why is old data still showing after deleting all data?',
+          bnA: 'সম্ভবত ব্রাউজার ক্যাশে পুরনো ডেটা ধরে রেখেছে। পেজটি রিফ্রেশ করুন বা ব্রাউজার রিস্টার্ট করুন।',
+          enA: 'The browser cache may be holding old data. Refresh the page or restart the browser.'
+        }
+      ]
+    },
+    {
+      id: 'themes',
+      bnTitle: '🎨 থিম ও পার্সোনালাইজেশন',
+      enTitle: '🎨 Themes & Personalization',
+      items: [
+        {
+          bnQ: 'কোন কোন থিম আছে?',
+          enQ: 'What themes are available?',
+          bnA: 'বর্তমানে ৪টি থিম আছে: পিংক, লাইট, ব্লু এবং ডার্ক।',
+          enA: 'Currently, there are 4 themes: Pink, Light, Blue, and Dark.'
+        },
+        {
+          bnQ: 'থিম কীভাবে পরিবর্তন করব?',
+          enQ: 'How do I change the theme?',
+          bnA: 'সেটিংস পেজে "অ্যাপের থিম" সেকশনে গিয়ে আপনার পছন্দের থিমে ক্লিক করুন।',
+          enA: 'Go to the Settings page, find the "App Theme" section, and click your preferred theme.'
+        },
+        {
+          bnQ: 'নিজের নাম ও ছবি কীভাবে সেট করব?',
+          enQ: 'How do I set my name and photo?',
+          bnA: 'সেটিংস > প্রোফাইল ও ব্যক্তিগতকরণ-এ যান। সেখানে নাম, ডাকনাম, জন্মদিন ও অ্যাভাটার (ছবি বা ইমোজি) সেট করতে পারবেন।',
+          enA: 'Go to Settings > Profile & Personalization. There you can set your name, nickname, birthday, and avatar (photo or emoji).'
+        }
+      ]
+    }
+  ];
+
+  // ============================================================
+  // State
+  // ============================================================
+  let currentCategory = 'all';
+  let searchQuery = '';
+
+  // ============================================================
+  // ভাষা
+  // ============================================================
+  function updatePageTexts() {
+    if (!window.Lang) return;
+
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setText('pageTitle', window.Lang.faqTitle());
+    setText('pageSubtitle', window.Lang.faqSubtitle());
+    setText('heroTitle', window.Lang.faqHeroTitle());
+    setText('heroSub', window.Lang.faqHeroSub());
+    setText('noResultsText', window.Lang.faqNoResults());
+
+    const search = document.getElementById('faqSearch');
+    if (search) search.placeholder = window.Lang.faqSearchPlaceholder();
+
+    document.title = window.Lang.faqTitle();
+  }
+
+  // ============================================================
+  // Render
+  // ============================================================
+  function renderFaqPage() {
+    const isEnNow = isEn();
+
+    // Category buttons
+    const catContainer = document.getElementById('catContainer');
+    if (catContainer) {
+      let catHtml = `<button class="faq-cat-btn ${currentCategory === 'all' ? 'active' : ''}" data-cat="all" type="button">${isEnNow ? 'All' : 'সবগুলো'}</button>`;
+      FAQ_DATA.forEach(g => {
+        catHtml += `<button class="faq-cat-btn ${currentCategory === g.id ? 'active' : ''}" data-cat="${g.id}" type="button">${isEnNow ? g.enTitle : g.bnTitle}</button>`;
+      });
+      catContainer.innerHTML = catHtml;
+
+      catContainer.querySelectorAll('[data-cat]').forEach(btn => {
+        btn.addEventListener('click', () => filterCategory(btn.dataset.cat));
+      });
+    }
+
+    // Q&A groups
+    const content = document.getElementById('faqContent');
+    if (!content) return;
+
+    let html = '';
+    FAQ_DATA.forEach(g => {
+      html += `<div class="faq-group" data-category="${g.id}">`;
+      html += `<div class="faq-group-title">${isEnNow ? g.enTitle : g.bnTitle}</div>`;
+      html += `<div class="faq-card">`;
+
+      g.items.forEach(item => {
+        html += `
+          <div class="faq-item">
+            <div class="faq-question" data-q="1">
+              <span>${escapeHtml(isEnNow ? item.enQ : item.bnQ)}</span>
+              <span class="faq-icon">▼</span>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                ${escapeHtml(isEnNow ? item.enA : item.bnA)}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div>`;
+    });
+
+    content.innerHTML = html;
+
+    // Event bindings
+    content.querySelectorAll('.faq-question').forEach(el => {
+      el.addEventListener('click', () => toggleFaq(el));
+    });
+
+    applyFilters();
+  }
+
+  // ============================================================
+  // Toggle FAQ
+  // ============================================================
+  function toggleFaq(element) {
+    const isActive = element.classList.contains('active');
+    element.classList.toggle('active');
+
+    const answer = element.nextElementSibling;
+    if (!answer) return;
+
+    if (isActive) {
+      answer.classList.remove('open');
+      answer.style.maxHeight = null;
+    } else {
+      answer.classList.add('open');
+      // ✅ scrollHeight ব্যবহার করে নির্ভুল উচ্চতা
+      answer.style.maxHeight = answer.scrollHeight + 'px';
+    }
+  }
+
+  // ============================================================
+  // Filter
+  // ============================================================
+  function filterCategory(cat) {
+    currentCategory = cat;
+    document.querySelectorAll('.faq-cat-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.cat === cat);
+    });
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const groups = document.querySelectorAll('.faq-group');
+    const noResults = document.getElementById('noResults');
+    let visibleCount = 0;
+
+    groups.forEach(group => {
+      const groupCat = group.dataset.category;
+      const items = group.querySelectorAll('.faq-item');
+      let groupHasVisibleItems = false;
+
+      items.forEach(item => {
+        const qText = item.querySelector('.faq-question').textContent.toLowerCase();
+        const aText = item.querySelector('.faq-answer-content').textContent.toLowerCase();
+
+        const matchCategory = (currentCategory === 'all' || groupCat === currentCategory);
+        const matchSearch = !searchQuery || qText.includes(searchQuery) || aText.includes(searchQuery);
+
+        if (matchCategory && matchSearch) {
+          item.style.display = 'block';
+          groupHasVisibleItems = true;
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      group.style.display = groupHasVisibleItems ? 'block' : 'none';
+    });
+
+    if (noResults) {
+      noResults.classList.toggle('show', visibleCount === 0);
+    }
+
+    // Clear button
+    const clearBtn = document.getElementById('faqSearchClear');
+    if (clearBtn) clearBtn.classList.toggle('show', !!searchQuery);
+  }
+
+  // ============================================================
+  // Search
+  // ============================================================
+  const searchInput = document.getElementById('faqSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      applyFilters();
+    });
+  }
+
+  const clearBtn = document.getElementById('faqSearchClear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      searchQuery = '';
+      applyFilters();
+    });
+  }
+
+  // ============================================================
+  // pageshow
+  // ============================================================
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || document.visibilityState === 'visible') {
+      const savedLang = (JSON.parse(localStorage.getItem('pinkDiaryProfile')) || {}).language || 'bn';
+      const currentLang = window.Lang ? window.Lang.lang() : 'bn';
+      if (savedLang !== currentLang) {
+        location.reload();
+        return;
+      }
+      updatePageTexts();
+      renderFaqPage();
+    }
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  updatePageTexts();
+  renderFaqPage();
+
+})();
+</script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

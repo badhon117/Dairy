@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diary</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e0568a">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+
+<!-- স্প্লাশ স্ক্রিন -->
+<div class="splash hidden" id="splash">
+  <div class="splash-logo">🌸</div>
+  <h1 class="splash-title" id="splashTitle">আমার দিনলিপি</h1>
+  <p class="splash-sub" id="splashSub">প্রতিদিনের ছোট ছোট গল্প</p>
+  <div class="splash-loader"><span></span></div>
+</div>
+
+<!-- হোম স্ক্রিন -->
+<div class="home hidden" id="home">
+  <header class="home-header">
+    <div class="greeting" id="greeting">শুভ সকাল 🌷</div>
+    <h2 class="home-title">আজ কী করতে চাও?</h2>
+  </header>
+  
+  <!-- ড্যাশবোর্ড সামারি -->
+  <div class="dashboard-summary" id="dashboardSummary">
+    <div class="dash-item">
+      <div class="dash-val" id="dashStreak">0</div>
+      <div class="dash-label">🔥 স্ট্রিক</div>
+    </div>
+    <div class="dash-item">
+      <div class="dash-val" id="dashTodos">0</div>
+      <div class="dash-label">📝 আজকের কাজ</div>
+    </div>
+    <div class="dash-item">
+      <div class="dash-val" id="dashProjects">0</div>
+      <div class="dash-label">🎯 প্রজেক্ট</div>
+    </div>
+    <div class="dash-item">
+      <div class="dash-val" id="dashMonth">0</div>
+      <div class="dash-label">📖 এ মাসে</div>
+    </div>
+    <div class="dash-item">
+      <div class="dash-val" id="dashNotes">0</div>
+      <div class="dash-label" id="dashNotesLabel">📝 নোট</div>
+    </div>
+  </div>
+  
+  <!-- দিনের স্মৃতি -->
+  <div id="throwbackCard" class="throwback-card hidden">
+    <div class="throwback-title">🕰️ এই দিনে (অতীতে)</div>
+    <div class="throwback-content" id="throwbackContent"></div>
+    <button class="throwback-btn" onclick="openThrowbackEntry()">📖 পুরোটা পড়ো</button>
+  </div>
+  
+  <!-- মেনু কার্ড -->
+  <div class="menu-grid">
+    <a href="diary.html" class="menu-card">
+      <div class="menu-icon">📖</div>
+      <div class="menu-label" id="menuLabelDiary">দিনলিপি</div>
+      <div class="menu-desc" id="menuDescDiary">আজকের কথা লিখে রাখো</div>
+    </a>
+
+    <a href="calendar.html" class="menu-card">
+      <div class="menu-icon">📅</div>
+      <div class="menu-label" id="menuLabelCalendar">ক্যালেন্ডার</div>
+      <div class="menu-desc" id="menuDescCalendar">দিন অনুযায়ী দেখো</div>
+    </a>
+  
+    <a href="todo.html" class="menu-card">
+      <div class="menu-icon">📝</div>
+      <div class="menu-label" id="menuLabelTodo">টুডু লিস্ট</div>
+      <div class="menu-desc" id="menuDescTodo">আজকের কাজের তালিকা</div>
+    </a>
+    
+    <a href="pomodoro.html" class="menu-card">
+      <div class="menu-icon">⏱️</div>
+      <div class="menu-label" id="menuLabelPomodoro">পোমোডোরো টাইমার</div>
+      <div class="menu-desc" id="menuDescPomodoro">প্রজেক্ট ও ফোকাস</div>
+    </a>
+    
+    <a href="routine.html" class="menu-card">
+      <div class="menu-icon">🗓️</div>
+      <div class="menu-label" id="menuLabelRoutine">রুটিন</div>
+      <div class="menu-desc" id="menuDescRoutine">ক্লাস বা কাজের সময়সূচি</div>
+    </a>
+    
+    <a href="mood.html" class="menu-card">
+      <div class="menu-icon">💭</div>
+      <div class="menu-label" id="menuLabelMood">মুড ট্র্যাকার</div>
+      <div class="menu-desc" id="menuDescMood">অনুভূতির হিসাব</div>
+    </a>
+    
+    <a href="note.html" class="menu-card">
+      <div class="menu-icon">📝</div>
+      <div class="menu-label" id="menuLabelNote">নোট</div>
+      <div class="menu-desc" id="menuDescNote">যেকোনো কথা লিখে রাখো</div>
+    </a>
+    
+    <a href="music.html" class="menu-card">
+      <div class="menu-icon">🎵</div>
+      <div class="menu-label" id="menuLabelMusic">মিউজিক</div>
+      <div class="menu-desc" id="menuDescMusic">তোমার পছন্দের গান</div>
+    </a>
+    
+    <a href="recycle.html" class="menu-card">
+      <div class="menu-icon">♻️</div>
+      <div class="menu-label" id="menuLabelRecycle">রিসাইকেল বিন</div>
+      <div class="menu-desc" id="menuDescRecycle">মুছে ফেলা জিনিস</div>
+    </a>
+	
+    <a href="settings.html" class="menu-card">
+      <div class="menu-icon">⚙️</div>
+      <div class="menu-label" id="menuLabelSettings">সেটিংস</div>
+      <div class="menu-desc" id="menuDescSettings">নিয়ন্ত্রণ ও ব্যাকআপ</div>
+    </a>
+	
+    <a href="faq.html" class="menu-card">
+      <div class="menu-icon">❓</div>
+      <div class="menu-label" id="menuLabelFaq">সাহায্য / FAQ</div>
+      <div class="menu-desc" id="menuDescFaq">প্রশ্ন-উত্তর ও গাইড</div>
+    </a>
+	   
+    <a href="about.html" class="menu-card">
+      <div class="menu-icon">ℹ️</div>
+      <div class="menu-label" id="menuLabelAbout">অ্যাপ সম্পর্কে</div>
+      <div class="menu-desc" id="menuDescAbout">ডেভেলপার ও তথ্য</div>
+    </a>
+
+    <a href="feedback.html" class="menu-card">
+      <div class="menu-icon">💬</div>
+      <div class="menu-label" id="menuLabelFeedback">ফিডব্যাক ও রেটিং</div>
+      <div class="menu-desc" id="menuDescFeedback">আপনার মতামত জানান</div>
+    </a>
+  </div>
+
+  <!-- ফুটার -->
+  <div class="home-footer" id="homeFooter">🌸 ভালো থাকো, নিজের যত্ন নাও</div>
+</div>
+
+<!-- ✅ সঠিক ক্রমানুসারে স্ক্রিপ্ট লোড -->
+<script src="language.js"></script>
+<script src="lock.js"></script>
+<script src="app.js"></script>
+<script src="player-widget.js"></script>
+<script src="theme.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('SW registration failed:', err));
+    });
+  }
+</script>
+</body>
+</html>
