@@ -1,0 +1,62 @@
+{
+  "name": "আমার দিনলিপি",
+  "short_name": "দিনলিপি",
+  "description": "প্রতিদিনের ছোট ছোট গল্প, নোট এবং কাজের হিসাব রাখার একটি নিরাপদ জায়গা।",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff0f6",
+  "theme_color": "#e0568a",
+  "lang": "bn",
+  "dir": "ltr",
+  "categories": ["productivity", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "নতুন ডায়েরি",
+      "short_name": "ডায়েরি",
+      "description": "নতুন এন্ট্রি লিখুন",
+      "url": "./diary.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "নোট",
+      "short_name": "নোট",
+      "description": "নোট লিখুন",
+      "url": "./note.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "টুডু লিস্ট",
+      "short_name": "টুডু",
+      "description": "কাজের তালিকা দেখুন",
+      "url": "./todo.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
